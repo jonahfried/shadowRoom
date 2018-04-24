@@ -4,6 +4,8 @@ import (
 	"fmt"
 	"math"
 	"math/rand"
+	"shadowRoom/boundry"
+	"shadowRoom/creature"
 	"sort"
 	"time"
 
@@ -41,117 +43,6 @@ func makeAgent(x, y float64) (cir agent) {
 	cir.img.Push(pixel.V(500, 350))
 	cir.img.Circle(20, 0)
 	return cir
-}
-
-type place struct {
-	rect     pixel.Rect
-	blocks   []obsticle
-	vertices []pixel.Vec
-
-	img *imdraw.IMDraw
-}
-
-func makePlace(rect pixel.Rect, blocks []obsticle) (room place) {
-	room.rect = rect
-
-	borderVertices := make([]pixel.Vec, 0, 4)
-	borderVertices = append(borderVertices, rect.Min)
-	borderVertices = append(borderVertices, pixel.V(rect.Min.X, rect.Max.Y))
-	borderVertices = append(borderVertices, rect.Max)
-	borderVertices = append(borderVertices, pixel.V(rect.Max.X, rect.Min.Y))
-
-	room.vertices = borderVertices
-
-	border := makeObsticle(borderVertices, true)
-	room.blocks = append(blocks, border)
-
-	room.img = imdraw.New(nil)
-	room.img.Color = colornames.Black
-	room.img.Push(room.rect.Center().Sub(room.rect.Size().Scaled(.5)))
-	room.img.Push(room.rect.Center().Add(room.rect.Size().Scaled(.5)))
-	room.img.Rectangle(2)
-	return room
-}
-
-type obsticle struct {
-	vertices []pixel.Vec
-	img      *imdraw.IMDraw
-	isRoom   bool
-}
-
-func makeObsticle(vertices []pixel.Vec, isRoom bool) (obst obsticle) {
-	obst.vertices = vertices
-	obst.isRoom = isRoom
-	obst.img = imdraw.New(nil)
-
-	obst.img.Color = colornames.Darkgrey
-	for _, vert := range obst.vertices {
-		obst.img.Push(vert)
-	}
-	obst.img.Polygon(0)
-
-	obst.img.Color = colornames.Slategrey
-	for _, vert := range obst.vertices {
-		obst.img.Push(vert)
-	}
-	obst.img.Polygon(1)
-
-	return obst
-}
-
-func makeRandomBlock(radius, stdDev, vertScale float64, center pixel.Vec) obsticle {
-	vertices := make([]pixel.Vec, 0, 3)
-	for angle := 2 * math.Pi / vertScale; angle < math.Pi*2; angle += 2 * math.Pi / vertScale {
-		r := rand.NormFloat64()*stdDev + radius
-		vertex := pixel.V(r*math.Cos(angle), (r*math.Sin(angle) + radius))
-		vertex = vertex.Add(center)
-		vertices = append(vertices, vertex)
-	}
-	return makeObsticle(vertices, false)
-}
-
-type creature struct {
-	posn, vel pixel.Vec
-
-	img *imdraw.IMDraw
-}
-
-func makeCreature(x, y float64) (monster creature) {
-	monster.posn = pixel.V(x, y)
-	monster.vel = pixel.V(3, 4)
-
-	monster.img = imdraw.New(nil)
-	monster.img.Color = colornames.Darkseagreen
-
-	return monster
-}
-
-func (monster *creature) update(room place) {
-	monster.posn = monster.posn.Add(monster.vel)
-
-	if monster.posn.X > (room.rect.Max.X - 20) {
-		monster.posn.X = (room.rect.Max.X - 20)
-		monster.vel.X *= -1
-	}
-	if monster.posn.X < (room.rect.Min.X + 20) {
-		monster.posn.X = (room.rect.Min.X + 20)
-		monster.vel.X *= -1
-	}
-	if monster.posn.Y > (room.rect.Max.Y - 20) {
-		monster.posn.Y = (room.rect.Max.Y - 20)
-		monster.vel.Y *= -1
-	}
-	if monster.posn.Y < (room.rect.Min.Y + 20) {
-		monster.posn.Y = (room.rect.Min.Y + 20)
-		monster.vel.Y *= -1
-	}
-}
-
-func (monster *creature) disp(win *pixelgl.Window) {
-	monster.img.Clear()
-	monster.img.Push(monster.posn)
-	monster.img.Circle(20, 0)
-	monster.img.Draw(win)
 }
 
 // Vector limitation. Takes in a pixel.Vec and a float64.
@@ -225,7 +116,7 @@ func (cir *agent) disp(win *pixelgl.Window) {
 
 // agent method. Runs all necessary per-frame proccedures on agent.
 // Takes in a pixelgl.Window from which to accept inputs.
-func (cir *agent) update(win *pixelgl.Window, room place) {
+func (cir *agent) update(win *pixelgl.Window, room boundry.Place) {
 	cir.pressHandler(win)
 	cir.releaseHandler(win)
 
@@ -240,11 +131,11 @@ func (cir *agent) update(win *pixelgl.Window, room place) {
 	// 	cir.posn.X = r.rect.Center().X - 100
 	// }
 	// cir.posn.X = math.Max(cir.posn.X, r.rect.Center().X-r.rect.W())
-	cir.posn.X = math.Max(cir.posn.X-20, room.rect.Min.X) + 20
-	cir.posn.X = math.Min(cir.posn.X+20, room.rect.Max.X) - 20
+	cir.posn.X = math.Max(cir.posn.X-20, room.Rect.Min.X) + 20
+	cir.posn.X = math.Min(cir.posn.X+20, room.Rect.Max.X) - 20
 
-	cir.posn.Y = math.Max(cir.posn.Y-20, room.rect.Min.Y) + 20
-	cir.posn.Y = math.Min(cir.posn.Y+20, room.rect.Max.Y) - 20
+	cir.posn.Y = math.Max(cir.posn.Y-20, room.Rect.Min.Y) + 20
+	cir.posn.Y = math.Min(cir.posn.Y+20, room.Rect.Max.Y) - 20
 	// }
 }
 
@@ -252,39 +143,7 @@ func vecDist(v1, v2 pixel.Vec) float64 {
 	return math.Sqrt(math.Pow(v1.X-v2.X, 2) + math.Pow(v1.Y-v2.Y, 2))
 }
 
-func listFilter(lst []float64, filterBy func(float64) bool) (rtrn []float64) {
-	for _, num := range lst {
-		if filterBy(num) {
-			rtrn = append(rtrn, num)
-		}
-	}
-	return rtrn
-}
-
-func isPositive(i float64) bool {
-	return i > 0
-}
-
-func isNegative(i float64) bool {
-	return i < 0
-}
-
-func lstMax(lst []float64) (max float64) {
-	max = lst[0]
-	for _, num := range lst[1:] {
-		max = math.Max(max, num)
-	}
-	return max
-}
-func lstMin(lst []float64) (max float64) {
-	max = lst[0]
-	for _, num := range lst[1:] {
-		max = math.Min(max, num)
-	}
-	return max
-}
-
-func obstruct(posn pixel.Vec, angle float64, room place, block obsticle) (stopPoint pixel.Vec) {
+func obstruct(posn pixel.Vec, angle float64, room boundry.Place, block boundry.Obsticle) (stopPoint pixel.Vec) {
 	// TODO: Fix divide by zero error
 	if (math.Cos(angle)) == 0 {
 		panic("divide by zero")
@@ -294,49 +153,49 @@ func obstruct(posn pixel.Vec, angle float64, room place, block obsticle) (stopPo
 
 	extension := 0.000000001
 
-	var blocks [2]obsticle
+	var blocks [2]boundry.Obsticle
 
 	blocks[0] = block
-	blocks[1] = makeObsticle(room.vertices, true)
+	blocks[1] = boundry.MakeObsticle(room.Vertices, true)
 
 	stopPoint = pixel.V(math.MaxFloat64, (math.MaxFloat64*slope)+yInt)
 
 	for _, block := range blocks {
-		for ind := 0; ind < len(block.vertices)-1; ind++ {
-			deltaY := (block.vertices[ind].X - block.vertices[ind+1].X)
+		for ind := 0; ind < len(block.Vertices)-1; ind++ {
+			deltaY := (block.Vertices[ind].X - block.Vertices[ind+1].X)
 			if deltaY != 0 {
-				edgeSlope := (block.vertices[ind].Y - block.vertices[ind+1].Y) / deltaY
-				edgeYInt := block.vertices[ind].Y - (block.vertices[ind].X * edgeSlope)
+				edgeSlope := (block.Vertices[ind].Y - block.Vertices[ind+1].Y) / deltaY
+				edgeYInt := block.Vertices[ind].Y - (block.Vertices[ind].X * edgeSlope)
 				xInterception := (edgeYInt - yInt) / (slope - edgeSlope)
 				interception := pixel.V(xInterception, (slope*xInterception)+yInt)
-				if vecDist(interception, posn) < vecDist(stopPoint, posn) && xInterception <= math.Max(block.vertices[ind].X, block.vertices[ind+1].X)+extension && xInterception >= math.Min(block.vertices[ind].X, block.vertices[ind+1].X)-extension && (xInterception-posn.X)*math.Cos(angle) > 0 {
+				if vecDist(interception, posn) < vecDist(stopPoint, posn) && xInterception <= math.Max(block.Vertices[ind].X, block.Vertices[ind+1].X)+extension && xInterception >= math.Min(block.Vertices[ind].X, block.Vertices[ind+1].X)-extension && (xInterception-posn.X)*math.Cos(angle) > 0 {
 					stopPoint = interception
 				}
 			} else {
-				yInterception := (slope * block.vertices[ind].X) + yInt
-				interception := pixel.V(block.vertices[ind].X, yInterception)
+				yInterception := (slope * block.Vertices[ind].X) + yInt
+				interception := pixel.V(block.Vertices[ind].X, yInterception)
 
-				if vecDist(interception, posn) < vecDist(stopPoint, posn) && yInterception <= math.Max(block.vertices[ind].Y, block.vertices[ind+1].Y)+extension && yInterception >= math.Min(block.vertices[ind].Y, block.vertices[ind+1].Y)-extension && (interception.X-posn.X)*math.Cos(angle) > 0 {
+				if vecDist(interception, posn) < vecDist(stopPoint, posn) && yInterception <= math.Max(block.Vertices[ind].Y, block.Vertices[ind+1].Y)+extension && yInterception >= math.Min(block.Vertices[ind].Y, block.Vertices[ind+1].Y)-extension && (interception.X-posn.X)*math.Cos(angle) > 0 {
 					stopPoint = interception
 				}
 
 			}
 
 		}
-		deltaY := (block.vertices[len(block.vertices)-1].X - block.vertices[0].X)
+		deltaY := (block.Vertices[len(block.Vertices)-1].X - block.Vertices[0].X)
 		if deltaY != 0 {
-			edgeSlope := (block.vertices[len(block.vertices)-1].Y - block.vertices[0].Y) / deltaY
-			edgeYInt := block.vertices[len(block.vertices)-1].Y - (block.vertices[len(block.vertices)-1].X * edgeSlope)
+			edgeSlope := (block.Vertices[len(block.Vertices)-1].Y - block.Vertices[0].Y) / deltaY
+			edgeYInt := block.Vertices[len(block.Vertices)-1].Y - (block.Vertices[len(block.Vertices)-1].X * edgeSlope)
 			xInterception := (edgeYInt - yInt) / (slope - edgeSlope)
 			interception := pixel.V(xInterception, (slope*xInterception)+yInt)
-			if vecDist(interception, posn) < vecDist(stopPoint, posn) && xInterception <= math.Max(block.vertices[len(block.vertices)-1].X, block.vertices[0].X) && xInterception >= math.Min(block.vertices[len(block.vertices)-1].X, block.vertices[0].X) && (xInterception-posn.X)*math.Cos(angle) > 0 {
+			if vecDist(interception, posn) < vecDist(stopPoint, posn) && xInterception <= math.Max(block.Vertices[len(block.Vertices)-1].X, block.Vertices[0].X) && xInterception >= math.Min(block.Vertices[len(block.Vertices)-1].X, block.Vertices[0].X) && (xInterception-posn.X)*math.Cos(angle) > 0 {
 				stopPoint = interception
 			}
 		} else {
-			yInterception := (slope * block.vertices[len(block.vertices)-1].X) + yInt
-			interception := pixel.V(block.vertices[len(block.vertices)-1].X, yInterception)
+			yInterception := (slope * block.Vertices[len(block.Vertices)-1].X) + yInt
+			interception := pixel.V(block.Vertices[len(block.Vertices)-1].X, yInterception)
 
-			if vecDist(interception, posn) < vecDist(stopPoint, posn) && yInterception <= math.Max(block.vertices[len(block.vertices)-1].Y, block.vertices[0].Y) && yInterception >= math.Min(block.vertices[len(block.vertices)-1].Y, block.vertices[0].Y) && (interception.X-posn.X)*math.Cos(angle) > 0 {
+			if vecDist(interception, posn) < vecDist(stopPoint, posn) && yInterception <= math.Max(block.Vertices[len(block.Vertices)-1].Y, block.Vertices[0].Y) && yInterception >= math.Min(block.Vertices[len(block.Vertices)-1].Y, block.Vertices[0].Y) && (interception.X-posn.X)*math.Cos(angle) > 0 {
 				stopPoint = interception
 			}
 
@@ -398,24 +257,24 @@ func run() {
 	// setting up the camera
 	cam := makeCamera(cir.posn, win)
 
-	blockList := make([]obsticle, 0)
+	blockList := make([]boundry.Obsticle, 0)
 	for ind := 0; ind < 1; ind++ {
 		// TODO: randomize more of the blocks
 		// -	Take the bounds and set variables for radius/stdDev
 		// - 	Then make sure the vertex won't land out of bounds
 		// block := makeRandomBlock(50, 10, 6, pixel.V(400, 200))
 		// blc := makeRandomBlock(50, 10, 6, pixel.V((rand.Float64()*400), (rand.Float64()*250)))
-		blc := makeRandomBlock(50, 10, 6, pixel.V((rand.Float64()*800)-400, (rand.Float64()*500)-250))
+		blc := boundry.MakeRandomBlock(50, 10, 6, pixel.V((rand.Float64()*800)-400, (rand.Float64()*500)-250))
 		blockList = append(blockList, blc)
 	}
 
 	// TODO: Make room bounds relative to Bounds
-	room := makePlace(pixel.R(-500, -350, 500, 350), blockList)
+	room := boundry.MakePlace(pixel.R(-500, -350, 500, 350), blockList)
 
 	point := imdraw.New(nil)
 	point.Color = colornames.Black
 
-	blob := makeCreature(0, 100)
+	blob := creature.MakeCreature(0, 100)
 
 	for !win.Closed() {
 		win.Clear(colornames.Whitesmoke)
@@ -427,16 +286,16 @@ func run() {
 
 		win.SetMatrix(cam.matrix)
 
-		room.img.Draw(win)
+		room.Img.Draw(win)
 
-		blob.update(room)
-		blob.disp(win)
+		blob.Update(room)
+		blob.Disp(win)
 
 		point.Clear()
 		anglesToCheck := make([]float64, 0, 10)
-		for _, block := range room.blocks {
-			if !block.isRoom {
-				for _, vertex := range block.vertices {
+		for _, block := range room.Blocks {
+			if !block.IsRoom {
+				for _, vertex := range block.Vertices {
 					theta := math.Atan2((vertex.Y - cir.posn.Y), (vertex.X - cir.posn.X))
 					anglesToCheck = append(anglesToCheck, theta)
 				}
@@ -447,7 +306,7 @@ func run() {
 					}
 				}
 				shadedVertices := make([]pixel.Vec, 0)
-				for _, vertex := range room.vertices {
+				for _, vertex := range room.Vertices {
 					theta := math.Atan2((vertex.Y - cir.posn.Y), (vertex.X - cir.posn.X))
 					landed := obstruct(cir.posn, theta, room, block)
 					if math.Abs(vecDist(landed, cir.posn)-vecDist(vertex, cir.posn)) > 1 {
@@ -530,9 +389,9 @@ func run() {
 			}
 		}
 
-		for _, bc := range room.blocks {
-			if !bc.isRoom {
-				bc.img.Draw(win)
+		for _, bc := range room.Blocks {
+			if !bc.IsRoom {
+				bc.Img.Draw(win)
 			}
 		}
 
