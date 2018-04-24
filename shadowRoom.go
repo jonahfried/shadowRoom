@@ -21,6 +21,106 @@ func vecDist(v1, v2 pixel.Vec) float64 {
 	return math.Sqrt(math.Pow(v1.X-v2.X, 2) + math.Pow(v1.Y-v2.Y, 2))
 }
 
+func illuminate(room boundry.Place, cir player.Agent, point *imdraw.IMDraw, win *pixelgl.Window) {
+	point.Clear()
+	anglesToCheck := make([]float64, 0, 10)
+	for _, block := range room.Blocks {
+		if !block.IsRoom {
+			for _, vertex := range block.Vertices {
+				theta := math.Atan2((vertex.Y - cir.Posn.Y), (vertex.X - cir.Posn.X))
+				anglesToCheck = append(anglesToCheck, theta)
+			}
+			length := len(anglesToCheck)
+			for k := 0; k < length; k++ {
+				for offset := -.000001; offset <= .000001; offset += .000001 {
+					anglesToCheck = append(anglesToCheck, anglesToCheck[k]+offset)
+				}
+			}
+			shadedVertices := make([]pixel.Vec, 0)
+			for _, vertex := range room.Vertices {
+				theta := math.Atan2((vertex.Y - cir.Posn.Y), (vertex.X - cir.Posn.X))
+				landed := boundry.Obstruct(cir.Posn, theta, room, block)
+				if math.Abs(vecDist(landed, cir.Posn)-vecDist(vertex, cir.Posn)) > 1 {
+					// point.Push(vertex)
+					shadedVertices = append(shadedVertices, vertex)
+					// if !cir.shade {
+					// 	point.Circle(4, 0)
+					// }
+				}
+			}
+			shapePoints := make([]pixel.Vec, 0)
+			sort.Float64s(anglesToCheck)
+			for _, angle := range anglesToCheck {
+				vec := boundry.Obstruct(cir.Posn, angle, room, block)
+				shapePoints = append(shapePoints, vec)
+				point.Push(vec)
+				if !cir.Shade {
+					point.Circle(4, 0)
+				}
+			}
+			if cir.Shade {
+				if cir.Fill {
+					point.Polygon(0)
+				} else {
+					point.Polygon(1)
+				}
+			}
+			for _, vertex := range shadedVertices {
+				for vecInd := 1; vecInd < len(shapePoints); vecInd++ {
+					point.Push(vertex)
+					if !cir.Shade {
+						point.Circle(4, 0)
+					}
+					point.Push(shapePoints[vecInd])
+					if !cir.Shade {
+						point.Circle(4, 0)
+					}
+					point.Push(shapePoints[vecInd-1])
+					if !cir.Shade {
+						point.Circle(4, 0)
+					}
+					if cir.Shade {
+						if cir.Fill {
+							point.Polygon(0)
+						} else {
+							point.Polygon(1)
+						}
+					}
+				}
+			}
+
+			if len(shadedVertices) > 1 {
+				for vertexInd := 1; vertexInd < len(shadedVertices); vertexInd++ {
+					point.Push(shadedVertices[vertexInd-1])
+					if !cir.Shade {
+						point.Circle(4, 0)
+					}
+					point.Push(shadedVertices[vertexInd])
+					if !cir.Shade {
+						point.Circle(4, 0)
+					}
+					point.Push(shapePoints[0])
+					if !cir.Shade {
+						point.Circle(4, 0)
+					}
+					if cir.Shade {
+						if cir.Fill {
+							point.Polygon(0)
+						} else {
+							point.Polygon(1)
+						}
+					}
+
+				}
+			}
+
+			anglesToCheck = make([]float64, 0, 10)
+			shapePoints = make([]pixel.Vec, 0)
+			point.Draw(win)
+		}
+	}
+}
+
 // Acting main function
 func run() {
 	// setting up the window
@@ -76,103 +176,7 @@ func run() {
 		blob.Update(room)
 		blob.Disp(win)
 
-		point.Clear()
-		anglesToCheck := make([]float64, 0, 10)
-		for _, block := range room.Blocks {
-			if !block.IsRoom {
-				for _, vertex := range block.Vertices {
-					theta := math.Atan2((vertex.Y - cir.Posn.Y), (vertex.X - cir.Posn.X))
-					anglesToCheck = append(anglesToCheck, theta)
-				}
-				length := len(anglesToCheck)
-				for k := 0; k < length; k++ {
-					for offset := -.000001; offset <= .000001; offset += .000001 {
-						anglesToCheck = append(anglesToCheck, anglesToCheck[k]+offset)
-					}
-				}
-				shadedVertices := make([]pixel.Vec, 0)
-				for _, vertex := range room.Vertices {
-					theta := math.Atan2((vertex.Y - cir.Posn.Y), (vertex.X - cir.Posn.X))
-					landed := boundry.Obstruct(cir.Posn, theta, room, block)
-					if math.Abs(vecDist(landed, cir.Posn)-vecDist(vertex, cir.Posn)) > 1 {
-						// point.Push(vertex)
-						shadedVertices = append(shadedVertices, vertex)
-						// if !cir.shade {
-						// 	point.Circle(4, 0)
-						// }
-					}
-				}
-				shapePoints := make([]pixel.Vec, 0)
-				sort.Float64s(anglesToCheck)
-				for _, angle := range anglesToCheck {
-					vec := boundry.Obstruct(cir.Posn, angle, room, block)
-					shapePoints = append(shapePoints, vec)
-					point.Push(vec)
-					if !cir.Shade {
-						point.Circle(4, 0)
-					}
-				}
-				if cir.Shade {
-					if cir.Fill {
-						point.Polygon(0)
-					} else {
-						point.Polygon(1)
-					}
-				}
-				for _, vertex := range shadedVertices {
-					for vecInd := 1; vecInd < len(shapePoints); vecInd++ {
-						point.Push(vertex)
-						if !cir.Shade {
-							point.Circle(4, 0)
-						}
-						point.Push(shapePoints[vecInd])
-						if !cir.Shade {
-							point.Circle(4, 0)
-						}
-						point.Push(shapePoints[vecInd-1])
-						if !cir.Shade {
-							point.Circle(4, 0)
-						}
-						if cir.Shade {
-							if cir.Fill {
-								point.Polygon(0)
-							} else {
-								point.Polygon(1)
-							}
-						}
-					}
-				}
-
-				if len(shadedVertices) > 1 {
-					for vertexInd := 1; vertexInd < len(shadedVertices); vertexInd++ {
-						point.Push(shadedVertices[vertexInd-1])
-						if !cir.Shade {
-							point.Circle(4, 0)
-						}
-						point.Push(shadedVertices[vertexInd])
-						if !cir.Shade {
-							point.Circle(4, 0)
-						}
-						point.Push(shapePoints[0])
-						if !cir.Shade {
-							point.Circle(4, 0)
-						}
-						if cir.Shade {
-							if cir.Fill {
-								point.Polygon(0)
-							} else {
-								point.Polygon(1)
-							}
-						}
-
-					}
-				}
-
-				anglesToCheck = make([]float64, 0, 10)
-				shapePoints = make([]pixel.Vec, 0)
-				point.Draw(win)
-			}
-		}
+		illuminate(room, cir, point, win)
 
 		for _, bc := range room.Blocks {
 			if !bc.IsRoom {
