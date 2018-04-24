@@ -143,70 +143,6 @@ func vecDist(v1, v2 pixel.Vec) float64 {
 	return math.Sqrt(math.Pow(v1.X-v2.X, 2) + math.Pow(v1.Y-v2.Y, 2))
 }
 
-func obstruct(posn pixel.Vec, angle float64, room boundry.Place, block boundry.Obsticle) (stopPoint pixel.Vec) {
-	// TODO: Fix divide by zero error
-	if (math.Cos(angle)) == 0 {
-		panic("divide by zero")
-	}
-	slope := math.Sin(angle) / math.Cos(angle)
-	yInt := posn.Y - (posn.X * slope)
-
-	extension := 0.000000001
-
-	var blocks [2]boundry.Obsticle
-
-	blocks[0] = block
-	blocks[1] = boundry.MakeObsticle(room.Vertices, true)
-
-	stopPoint = pixel.V(math.MaxFloat64, (math.MaxFloat64*slope)+yInt)
-
-	for _, block := range blocks {
-		for ind := 0; ind < len(block.Vertices)-1; ind++ {
-			deltaY := (block.Vertices[ind].X - block.Vertices[ind+1].X)
-			if deltaY != 0 {
-				edgeSlope := (block.Vertices[ind].Y - block.Vertices[ind+1].Y) / deltaY
-				edgeYInt := block.Vertices[ind].Y - (block.Vertices[ind].X * edgeSlope)
-				xInterception := (edgeYInt - yInt) / (slope - edgeSlope)
-				interception := pixel.V(xInterception, (slope*xInterception)+yInt)
-				if vecDist(interception, posn) < vecDist(stopPoint, posn) && xInterception <= math.Max(block.Vertices[ind].X, block.Vertices[ind+1].X)+extension && xInterception >= math.Min(block.Vertices[ind].X, block.Vertices[ind+1].X)-extension && (xInterception-posn.X)*math.Cos(angle) > 0 {
-					stopPoint = interception
-				}
-			} else {
-				yInterception := (slope * block.Vertices[ind].X) + yInt
-				interception := pixel.V(block.Vertices[ind].X, yInterception)
-
-				if vecDist(interception, posn) < vecDist(stopPoint, posn) && yInterception <= math.Max(block.Vertices[ind].Y, block.Vertices[ind+1].Y)+extension && yInterception >= math.Min(block.Vertices[ind].Y, block.Vertices[ind+1].Y)-extension && (interception.X-posn.X)*math.Cos(angle) > 0 {
-					stopPoint = interception
-				}
-
-			}
-
-		}
-		deltaY := (block.Vertices[len(block.Vertices)-1].X - block.Vertices[0].X)
-		if deltaY != 0 {
-			edgeSlope := (block.Vertices[len(block.Vertices)-1].Y - block.Vertices[0].Y) / deltaY
-			edgeYInt := block.Vertices[len(block.Vertices)-1].Y - (block.Vertices[len(block.Vertices)-1].X * edgeSlope)
-			xInterception := (edgeYInt - yInt) / (slope - edgeSlope)
-			interception := pixel.V(xInterception, (slope*xInterception)+yInt)
-			if vecDist(interception, posn) < vecDist(stopPoint, posn) && xInterception <= math.Max(block.Vertices[len(block.Vertices)-1].X, block.Vertices[0].X) && xInterception >= math.Min(block.Vertices[len(block.Vertices)-1].X, block.Vertices[0].X) && (xInterception-posn.X)*math.Cos(angle) > 0 {
-				stopPoint = interception
-			}
-		} else {
-			yInterception := (slope * block.Vertices[len(block.Vertices)-1].X) + yInt
-			interception := pixel.V(block.Vertices[len(block.Vertices)-1].X, yInterception)
-
-			if vecDist(interception, posn) < vecDist(stopPoint, posn) && yInterception <= math.Max(block.Vertices[len(block.Vertices)-1].Y, block.Vertices[0].Y) && yInterception >= math.Min(block.Vertices[len(block.Vertices)-1].Y, block.Vertices[0].Y) && (interception.X-posn.X)*math.Cos(angle) > 0 {
-				stopPoint = interception
-			}
-
-		}
-
-	}
-
-	return stopPoint
-
-}
-
 type camera struct {
 	posn, vel          pixel.Vec
 	maxForce, maxSpeed float64
@@ -308,7 +244,7 @@ func run() {
 				shadedVertices := make([]pixel.Vec, 0)
 				for _, vertex := range room.Vertices {
 					theta := math.Atan2((vertex.Y - cir.posn.Y), (vertex.X - cir.posn.X))
-					landed := obstruct(cir.posn, theta, room, block)
+					landed := boundry.Obstruct(cir.posn, theta, room, block)
 					if math.Abs(vecDist(landed, cir.posn)-vecDist(vertex, cir.posn)) > 1 {
 						// point.Push(vertex)
 						shadedVertices = append(shadedVertices, vertex)
@@ -320,7 +256,7 @@ func run() {
 				shapePoints := make([]pixel.Vec, 0)
 				sort.Float64s(anglesToCheck)
 				for _, angle := range anglesToCheck {
-					vec := obstruct(cir.posn, angle, room, block)
+					vec := boundry.Obstruct(cir.posn, angle, room, block)
 					shapePoints = append(shapePoints, vec)
 					point.Push(vec)
 					if !cir.shade {
