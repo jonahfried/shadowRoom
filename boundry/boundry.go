@@ -52,37 +52,16 @@ func MakePlace(rect pixel.Rect, numBlocks int, blocks ...Obsticle) (room Place) 
 	}
 
 	room.Img = imdraw.New(nil)
-	room.Img.Push(room.Rect.Center().Sub(room.Rect.Size().Scaled(.5)))
-	room.Img.Push(room.Rect.Center().Add(room.Rect.Size().Scaled(.5)))
-	room.Img.Rectangle(0)
 	return room
 }
 
 // Disp updates and displays a room's Img
 func (room Place) Disp(posn pixel.Vec, win *pixelgl.Window) {
 	room.Img.Clear()
-	room.Img.Color = pixel.ToRGBA(colornames.Whitesmoke).Mul(pixel.Alpha(250 / vecDist(room.Vertices[len(room.Vertices)-1], posn)))
-	room.Img.Push(room.Vertices[len(room.Vertices)-1])
-	for _, vertex := range room.Vertices {
-		room.Img.Color = pixel.ToRGBA(colornames.Whitesmoke).Mul(pixel.Alpha(250 / vecDist(vertex, posn)))
-		room.Img.Push(vertex)
-
-		room.Img.Color = colornames.Whitesmoke
-		room.Img.Push(posn)
-
-		room.Img.Polygon(0)
-
-		room.Img.Color = pixel.ToRGBA(colornames.Whitesmoke).Mul(pixel.Alpha(10 / vecDist(vertex, posn)))
-		room.Img.Push(vertex)
-	}
-	room.Img.Color = pixel.ToRGBA(colornames.Whitesmoke).Mul(pixel.Alpha(10 / vecDist(room.Vertices[0], posn)))
-	room.Img.Push(room.Vertices[0])
-
-	room.Img.Color = colornames.Whitesmoke
-	room.Img.Push(posn)
-
-	room.Img.Polygon(0)
-
+	room.Img.Color = colornames.Black
+	room.Img.Push(room.Rect.Center().Sub(room.Rect.Size().Scaled(.5)))
+	room.Img.Push(room.Rect.Center().Add(room.Rect.Size().Scaled(.5)))
+	room.Img.Rectangle(3)
 	room.Img.Draw(win)
 }
 
