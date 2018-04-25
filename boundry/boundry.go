@@ -72,10 +72,10 @@ func (room Place) Disp(posn pixel.Vec, win *pixelgl.Window) {
 
 		room.Img.Polygon(0)
 
-		room.Img.Color = pixel.ToRGBA(colornames.Whitesmoke).Mul(pixel.Alpha(250 / vecDist(vertex, posn)))
+		room.Img.Color = pixel.ToRGBA(colornames.Whitesmoke).Mul(pixel.Alpha(10 / vecDist(vertex, posn)))
 		room.Img.Push(vertex)
 	}
-	room.Img.Color = pixel.ToRGBA(colornames.Whitesmoke).Mul(pixel.Alpha(250 / vecDist(room.Vertices[0], posn)))
+	room.Img.Color = pixel.ToRGBA(colornames.Whitesmoke).Mul(pixel.Alpha(10 / vecDist(room.Vertices[0], posn)))
 	room.Img.Push(room.Vertices[0])
 
 	room.Img.Color = colornames.Whitesmoke
