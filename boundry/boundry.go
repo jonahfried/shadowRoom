@@ -22,7 +22,7 @@ type Place struct {
 
 // MakePlace turns specifications of a place, (rectangle and the Obsticles it contains)
 // and returns a Place
-func MakePlace(rect pixel.Rect, blocks []Obsticle) (room Place) {
+func MakePlace(rect pixel.Rect, numBlocks int, blocks ...Obsticle) (room Place) {
 	room.Rect = rect
 
 	borderVertices := make([]pixel.Vec, 0, 4)
@@ -33,8 +33,23 @@ func MakePlace(rect pixel.Rect, blocks []Obsticle) (room Place) {
 
 	room.Vertices = borderVertices
 
-	border := MakeObsticle(borderVertices, true)
-	room.Blocks = append(blocks, border)
+	border := MakeObsticle(borderVertices, rect.Min, 0, true)
+
+	if len(blocks) == 0 {
+		blockList := make([]Obsticle, 0)
+		for ind := 0; ind < numBlocks; ind++ {
+			// TODO: randomize more of the blocks
+			// -	Take the bounds and set variables for radius/stdDev
+			// - 	Then make sure the vertex won't land out of bounds
+			// block := makeRandomBlock(50, 10, 6, pixel.V(400, 200))
+			// blc := makeRandomBlock(50, 10, 6, pixel.V((rand.Float64()*400), (rand.Float64()*250)))
+			blc := MakeRandomBlock(50, 10, 6, rect, blockList)
+			blockList = append(blockList, blc)
+		}
+		room.Blocks = append(blockList, border)
+	} else {
+		room.Blocks = append(blocks, border)
+	}
 
 	room.Img = imdraw.New(nil)
 	room.Img.Color = colornames.Black
@@ -48,18 +63,25 @@ func MakePlace(rect pixel.Rect, blocks []Obsticle) (room Place) {
 // it contains:
 //	 a list of vertices defining its bounds
 //	 and an *imdraw.IMdraw to store its look.
+//	 also stores a center and radius set if generated randomly to avoid overlap
 type Obsticle struct {
 	Vertices []pixel.Vec
-	Img      *imdraw.IMDraw
+	center   pixel.Vec
+	radius   float64
 	IsRoom   bool
+
+	Img *imdraw.IMDraw
 }
 
 // MakeObsticle takes in a list of vertices that define its boundries,
 // and a bool representing whether or not it is a Room.
 // returns an Obsticle
-func MakeObsticle(vertices []pixel.Vec, isRoom bool) (obst Obsticle) {
+func MakeObsticle(vertices []pixel.Vec, center pixel.Vec, radius float64, isRoom bool) (obst Obsticle) {
 	obst.Vertices = vertices
 	obst.IsRoom = isRoom
+	obst.center = center
+	obst.radius = radius
+
 	obst.Img = imdraw.New(nil)
 
 	obst.Img.Color = colornames.Darkgrey
@@ -79,16 +101,38 @@ func MakeObsticle(vertices []pixel.Vec, isRoom bool) (obst Obsticle) {
 
 // MakeRandomBlock takes in a standard radius,
 // a standard deviation from the radius, a number of vertices to create, (float64)
-// and a center (pixel.Vec), returning a randomly generated Obsticle
-func MakeRandomBlock(radius, stdDev, vertScale float64, center pixel.Vec) Obsticle {
+// and a Room to hold it, returning a randomly generated Obsticle
+func MakeRandomBlock(radius, stdDev, vertScale float64, rect pixel.Rect, existingBlocks []Obsticle) Obsticle {
+	centerX := rect.Center().X + (rand.Float64() * rect.W()) - (rect.W() / 2)
+	centerY := rect.Center().Y + (rand.Float64() * rect.H()) - (rect.H() / 2)
+	center := pixel.V(centerX, centerY)
+TryLoop:
+	for tries := 0; tries < 10; tries++ {
+		for _, blc := range existingBlocks {
+			if vecDist(blc.center, center) < (blc.radius + radius + stdDev) {
+				centerX = rect.Center().X + (rand.Float64() * rect.W()) - (rect.W() / 2)
+				centerY = rect.Center().Y + (rand.Float64() * rect.H()) - (rect.H() / 2)
+				center = pixel.V(centerX, centerY)
+				continue TryLoop
+			}
+		}
+		break TryLoop
+	}
 	vertices := make([]pixel.Vec, 0, 3)
 	for angle := 2 * math.Pi / vertScale; angle < math.Pi*2; angle += 2 * math.Pi / vertScale {
 		r := rand.NormFloat64()*stdDev + radius
 		vertex := pixel.V(r*math.Cos(angle), (r*math.Sin(angle) + radius))
 		vertex = vertex.Add(center)
+
+		vertex.X = math.Min(vertex.X, rect.Max.X)
+		vertex.X = math.Max(vertex.X, rect.Min.X)
+
+		vertex.Y = math.Min(vertex.Y, rect.Max.Y)
+		vertex.Y = math.Max(vertex.Y, rect.Min.Y)
+
 		vertices = append(vertices, vertex)
 	}
-	return MakeObsticle(vertices, false)
+	return MakeObsticle(vertices, center, radius, false)
 }
 
 func vecDist(v1, v2 pixel.Vec) float64 {
@@ -111,7 +155,7 @@ func Obstruct(posn pixel.Vec, angle float64, room Place, block Obsticle) (stopPo
 	var blocks [2]Obsticle
 
 	blocks[0] = block
-	blocks[1] = MakeObsticle(room.Vertices, true)
+	blocks[1] = MakeObsticle(room.Vertices, pixel.ZV, 0, true)
 
 	stopPoint = pixel.V(math.MaxFloat64, (math.MaxFloat64*slope)+yInt)
 

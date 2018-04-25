@@ -142,19 +142,8 @@ func run() {
 	// setting up the camera
 	cam := player.MakeCamera(cir.Posn, win)
 
-	blockList := make([]boundry.Obsticle, 0)
-	for ind := 0; ind < 1; ind++ {
-		// TODO: randomize more of the blocks
-		// -	Take the bounds and set variables for radius/stdDev
-		// - 	Then make sure the vertex won't land out of bounds
-		// block := makeRandomBlock(50, 10, 6, pixel.V(400, 200))
-		// blc := makeRandomBlock(50, 10, 6, pixel.V((rand.Float64()*400), (rand.Float64()*250)))
-		blc := boundry.MakeRandomBlock(50, 10, 6, pixel.V((rand.Float64()*800)-400, (rand.Float64()*500)-250))
-		blockList = append(blockList, blc)
-	}
-
 	// TODO: Make room bounds relative to Bounds
-	room := boundry.MakePlace(pixel.R(-500, -350, 500, 350), blockList)
+	room := boundry.MakePlace(pixel.R(-500, -350, 500, 350), 10)
 
 	point := imdraw.New(nil)
 	point.Color = colornames.Black
