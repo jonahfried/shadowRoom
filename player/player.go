@@ -109,7 +109,7 @@ func (cir *Agent) Disp(win *pixelgl.Window) {
 }
 
 // Light adds fading light (white circles) around an Agent's posn
-func (cir *Agent) Light(win *pixelgl.Window) {
+func (cir *Agent) Light(room *boundry.Place, win *pixelgl.Window) {
 	img := imdraw.New(nil)
 	col := (pixel.ToRGBA(colornames.Whitesmoke)).Mul(pixel.Alpha(.1))
 	for fade := 80; fade > 1; fade-- {
@@ -120,7 +120,7 @@ func (cir *Agent) Light(win *pixelgl.Window) {
 		col = (pixel.ToRGBA(colornames.Whitesmoke)).Mul(pixel.Alpha(1 / float64(fade)))
 	}
 
-	img.Draw(win)
+	img.Draw(room.Target)
 }
 
 // Update is an agent method. Runs all necessary per-frame proccedures on agent.

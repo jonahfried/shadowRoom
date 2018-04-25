@@ -4,8 +4,6 @@ import (
 	"math"
 	"math/rand"
 
-	"github.com/faiface/pixel/pixelgl"
-
 	"github.com/faiface/pixel"
 	"github.com/faiface/pixel/imdraw"
 	"golang.org/x/image/colornames"
@@ -19,7 +17,8 @@ type Place struct {
 	Blocks   []Obsticle
 	Vertices []pixel.Vec
 
-	Img *imdraw.IMDraw
+	Img    *imdraw.IMDraw
+	Target *pixel.TargetTriangles
 }
 
 // MakePlace turns specifications of a place, (rectangle and the Obsticles it contains)
@@ -56,13 +55,13 @@ func MakePlace(rect pixel.Rect, numBlocks int, blocks ...Obsticle) (room Place) 
 }
 
 // Disp updates and displays a room's Img
-func (room Place) Disp(posn pixel.Vec, win *pixelgl.Window) {
+func (room Place) Disp() {
 	room.Img.Clear()
 	room.Img.Color = colornames.Black
 	room.Img.Push(room.Rect.Center().Sub(room.Rect.Size().Scaled(.5)))
 	room.Img.Push(room.Rect.Center().Add(room.Rect.Size().Scaled(.5)))
 	room.Img.Rectangle(3)
-	room.Img.Draw(win)
+	room.Img.Draw(room.Target)
 }
 
 // Obsticle is a data structure defining a boundry inside a room

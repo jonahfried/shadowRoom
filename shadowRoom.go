@@ -159,9 +159,11 @@ func run() {
 
 		win.SetMatrix(cam.Matrix)
 
-		cir.Light(win)
+		room.Disp()
 
-		room.Disp(cir.Posn, win)
+		cir.Light(&room, win)
+
+		room.Target.Draw(win)
 
 		blob.Update(room)
 		blob.Disp(win)
