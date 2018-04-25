@@ -4,6 +4,8 @@ import (
 	"math"
 	"math/rand"
 
+	"github.com/faiface/pixel/pixelgl"
+
 	"github.com/faiface/pixel"
 	"github.com/faiface/pixel/imdraw"
 	"golang.org/x/image/colornames"
@@ -33,8 +35,6 @@ func MakePlace(rect pixel.Rect, numBlocks int, blocks ...Obsticle) (room Place) 
 
 	room.Vertices = borderVertices
 
-	border := MakeObsticle(borderVertices, rect.Min, 0, true)
-
 	if len(blocks) == 0 {
 		blockList := make([]Obsticle, 0)
 		for ind := 0; ind < numBlocks; ind++ {
@@ -46,17 +46,44 @@ func MakePlace(rect pixel.Rect, numBlocks int, blocks ...Obsticle) (room Place) 
 			blc := MakeRandomBlock(50, 10, 6, rect, blockList)
 			blockList = append(blockList, blc)
 		}
-		room.Blocks = append(blockList, border)
+		room.Blocks = blockList
 	} else {
-		room.Blocks = append(blocks, border)
+		room.Blocks = blocks
 	}
 
 	room.Img = imdraw.New(nil)
-	room.Img.Color = colornames.Black
 	room.Img.Push(room.Rect.Center().Sub(room.Rect.Size().Scaled(.5)))
 	room.Img.Push(room.Rect.Center().Add(room.Rect.Size().Scaled(.5)))
-	room.Img.Rectangle(2)
+	room.Img.Rectangle(0)
 	return room
+}
+
+// Disp updates and displays a room's Img
+func (room Place) Disp(posn pixel.Vec, win *pixelgl.Window) {
+	room.Img.Clear()
+	room.Img.Color = pixel.ToRGBA(colornames.Whitesmoke).Mul(pixel.Alpha(250 / vecDist(room.Vertices[len(room.Vertices)-1], posn)))
+	room.Img.Push(room.Vertices[len(room.Vertices)-1])
+	for _, vertex := range room.Vertices {
+		room.Img.Color = pixel.ToRGBA(colornames.Whitesmoke).Mul(pixel.Alpha(250 / vecDist(vertex, posn)))
+		room.Img.Push(vertex)
+
+		room.Img.Color = colornames.Whitesmoke
+		room.Img.Push(posn)
+
+		room.Img.Polygon(0)
+
+		room.Img.Color = pixel.ToRGBA(colornames.Whitesmoke).Mul(pixel.Alpha(250 / vecDist(vertex, posn)))
+		room.Img.Push(vertex)
+	}
+	room.Img.Color = pixel.ToRGBA(colornames.Whitesmoke).Mul(pixel.Alpha(250 / vecDist(room.Vertices[0], posn)))
+	room.Img.Push(room.Vertices[0])
+
+	room.Img.Color = colornames.Whitesmoke
+	room.Img.Push(posn)
+
+	room.Img.Polygon(0)
+
+	room.Img.Draw(win)
 }
 
 // Obsticle is a data structure defining a boundry inside a room
@@ -68,7 +95,6 @@ type Obsticle struct {
 	Vertices []pixel.Vec
 	center   pixel.Vec
 	radius   float64
-	IsRoom   bool
 
 	Img *imdraw.IMDraw
 }
@@ -76,9 +102,8 @@ type Obsticle struct {
 // MakeObsticle takes in a list of vertices that define its boundries,
 // and a bool representing whether or not it is a Room.
 // returns an Obsticle
-func MakeObsticle(vertices []pixel.Vec, center pixel.Vec, radius float64, isRoom bool) (obst Obsticle) {
+func MakeObsticle(vertices []pixel.Vec, center pixel.Vec, radius float64) (obst Obsticle) {
 	obst.Vertices = vertices
-	obst.IsRoom = isRoom
 	obst.center = center
 	obst.radius = radius
 
@@ -89,12 +114,6 @@ func MakeObsticle(vertices []pixel.Vec, center pixel.Vec, radius float64, isRoom
 		obst.Img.Push(vert)
 	}
 	obst.Img.Polygon(0)
-
-	obst.Img.Color = colornames.Slategrey
-	for _, vert := range obst.Vertices {
-		obst.Img.Push(vert)
-	}
-	obst.Img.Polygon(1)
 
 	return obst
 }
@@ -132,7 +151,7 @@ TryLoop:
 
 		vertices = append(vertices, vertex)
 	}
-	return MakeObsticle(vertices, center, radius, false)
+	return MakeObsticle(vertices, center, radius)
 }
 
 func vecDist(v1, v2 pixel.Vec) float64 {
@@ -155,7 +174,7 @@ func Obstruct(posn pixel.Vec, angle float64, room Place, block Obsticle) (stopPo
 	var blocks [2]Obsticle
 
 	blocks[0] = block
-	blocks[1] = MakeObsticle(room.Vertices, pixel.ZV, 0, true)
+	blocks[1] = MakeObsticle(room.Vertices, pixel.ZV, 0)
 
 	stopPoint = pixel.V(math.MaxFloat64, (math.MaxFloat64*slope)+yInt)
 
