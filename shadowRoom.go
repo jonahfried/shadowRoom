@@ -5,7 +5,6 @@ import (
 	"math"
 	"math/rand"
 	"shadowRoom/boundry"
-	"shadowRoom/creature"
 	"shadowRoom/player"
 	"sort"
 	"time"
@@ -146,7 +145,7 @@ func run() {
 	point := imdraw.New(nil)
 	point.Color = colornames.Black
 
-	blob := creature.MakeCreature(0, 100)
+	// blob := creature.MakeCreature(0, 100)
 
 	// Main Draw Loop:
 	for !win.Closed() {
@@ -162,18 +161,19 @@ func run() {
 
 		room.Target.Clear(pixel.Alpha(0))
 		// room.Disp()
-		cir.Light(&room)
+		// cir.Light(&room)
+		room.ToGrid(20)
 
 		room.Target.Draw(win, pixel.IM) //.Moved(win.Bounds().Center()))
 
-		blob.Update(room)
-		blob.Disp(win)
+		// blob.Update(room)
+		// blob.Disp(win)
 
 		for _, bc := range room.Blocks {
 			bc.Img.Draw(win)
 		}
 
-		illuminate(room, cir, point, win)
+		// illuminate(room, cir, point, win)
 
 		cir.Disp(win)
 		win.Update()

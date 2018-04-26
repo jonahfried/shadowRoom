@@ -206,3 +206,60 @@ func Obstruct(posn pixel.Vec, angle float64, room Place, block Obsticle) (stopPo
 	return stopPoint
 
 }
+
+// A Tile stores a rect to represent an area in a room
+// and a bool to represent wheter it is enterable.
+type Tile struct {
+	Rect      pixel.Rect
+	Enterable bool
+}
+
+func makeTile(rect pixel.Rect) (tl Tile) {
+	tl.Rect = rect
+	tl.Enterable = true
+	return tl
+}
+
+// Grid is a structure that stores a rough tile representation of a room.
+type Grid struct {
+	GridMap []Tile
+	Room    *Place
+}
+
+func makeGrid(room *Place) (grid Grid) {
+	grid.GridMap = make([]Tile, 0)
+	grid.Room = room
+	return grid
+}
+
+// ToGrid is a method for a Place, returning a rough tile-based
+// representation of where in the room is enterable.
+func (room *Place) ToGrid(grain float64) (grid Grid) {
+	img := imdraw.New(nil)
+	tilesPerRow := grain
+	grid = makeGrid(room)
+	for i := room.Rect.Min.X; i < room.Rect.Max.X; i += room.Rect.W() / tilesPerRow {
+		for j := room.Rect.Min.Y; j < room.Rect.Max.Y; j += room.Rect.H() / tilesPerRow {
+
+			rec := pixel.R(i, j, i+(room.Rect.W()/tilesPerRow), j+(room.Rect.H()/tilesPerRow))
+			img.Color = colornames.Blue
+			tl := makeTile(rec)
+		VertexEval:
+			for _, obst := range room.Blocks {
+				for _, vertex := range obst.Vertices {
+					if rec.Contains(vertex) {
+						tl.Enterable = false
+						img.Color = colornames.Red
+						break VertexEval
+					}
+				}
+			}
+			img.Push(rec.Min)
+			img.Push(rec.Max)
+			img.Rectangle(0)
+			grid.GridMap = append(grid.GridMap, tl)
+		}
+	}
+	img.Draw(room.Target)
+	return grid
+}
