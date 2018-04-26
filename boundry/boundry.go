@@ -6,6 +6,7 @@ import (
 
 	"github.com/faiface/pixel"
 	"github.com/faiface/pixel/imdraw"
+	"github.com/faiface/pixel/pixelgl"
 	"golang.org/x/image/colornames"
 )
 
@@ -18,7 +19,7 @@ type Place struct {
 	Vertices []pixel.Vec
 
 	Img    *imdraw.IMDraw
-	Target *pixel.TargetTriangles
+	Target *pixelgl.Canvas
 }
 
 // MakePlace turns specifications of a place, (rectangle and the Obsticles it contains)
@@ -50,12 +51,15 @@ func MakePlace(rect pixel.Rect, numBlocks int, blocks ...Obsticle) (room Place) 
 		room.Blocks = blocks
 	}
 
+	room.Target = pixelgl.NewCanvas(rect)
 	room.Img = imdraw.New(nil)
 	return room
 }
 
 // Disp updates and displays a room's Img
 func (room Place) Disp() {
+	// room.Target.Clear(pixel.Alpha(0))
+	// room.Target.Clear(colornames.Green)
 	room.Img.Clear()
 	room.Img.Color = colornames.Black
 	room.Img.Push(room.Rect.Center().Sub(room.Rect.Size().Scaled(.5)))

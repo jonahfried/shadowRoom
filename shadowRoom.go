@@ -158,12 +158,13 @@ func run() {
 		cam.Matrix = pixel.IM.Moved(win.Bounds().Center().Sub(cam.Posn))
 
 		win.SetMatrix(cam.Matrix)
+		room.Target.SetMatrix(pixel.IM.Moved(room.Target.Bounds().Center()))
 
-		room.Disp()
+		room.Target.Clear(pixel.Alpha(0))
+		// room.Disp()
+		cir.Light(&room)
 
-		cir.Light(&room, win)
-
-		room.Target.Draw(win)
+		room.Target.Draw(win, pixel.IM) //.Moved(win.Bounds().Center()))
 
 		blob.Update(room)
 		blob.Disp(win)
