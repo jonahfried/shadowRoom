@@ -1,8 +1,11 @@
 package boundry
 
 import (
+	"container/heap"
+	"fmt"
 	"math"
 	"math/rand"
+	priorityqueue "shadowRoom/priorityQueue"
 
 	"github.com/faiface/pixel"
 	"github.com/faiface/pixel/imdraw"
@@ -210,20 +213,34 @@ func Obstruct(posn pixel.Vec, angle float64, room Place, block Obsticle) (stopPo
 // A Tile stores a rect to represent an area in a room
 // and a bool to represent wheter it is enterable.
 type Tile struct {
-	Rect      pixel.Rect
-	Enterable bool
+	Rect       pixel.Rect
+	gScore     float64
+	fScore     float64
+	Enterable  bool
+	xInd, yInd int
+
+	foundFrom int
 }
 
-func makeTile(rect pixel.Rect) (tl Tile) {
+func makeTile(rect pixel.Rect, xInd, yInd int) (tl Tile) {
 	tl.Rect = rect
 	tl.Enterable = true
+	tl.gScore = math.MaxFloat64
+	tl.fScore = math.MaxFloat64
+	tl.xInd, tl.yInd = xInd, yInd
+	tl.foundFrom = -1
 	return tl
 }
 
 // Grid is a structure that stores a rough tile representation of a room.
 type Grid struct {
-	GridMap []Tile
-	Room    *Place
+	GridMap     []Tile
+	Room        *Place
+	TilesPerRow int
+
+	Start, Goal pixel.Vec
+	StartIndex  int
+	GoalIndex   int
 }
 
 func makeGrid(room *Place) (grid Grid) {
@@ -234,32 +251,126 @@ func makeGrid(room *Place) (grid Grid) {
 
 // ToGrid is a method for a Place, returning a rough tile-based
 // representation of where in the room is enterable.
-func (room *Place) ToGrid(grain float64) (grid Grid) {
-	img := imdraw.New(nil)
-	tilesPerRow := grain
+func (room *Place) ToGrid(grain int, start, goal pixel.Vec) (grid Grid) {
+	tilesPerRow := float64(grain)
 	grid = makeGrid(room)
-	for i := room.Rect.Min.X; i < room.Rect.Max.X; i += room.Rect.W() / tilesPerRow {
-		for j := room.Rect.Min.Y; j < room.Rect.Max.Y; j += room.Rect.H() / tilesPerRow {
+	grid.TilesPerRow = grain
+	grid.Start = start
+	grid.Goal = goal
 
+	xInd := 0
+	yInd := 0
+	for j := room.Rect.Min.Y; j < room.Rect.Max.Y; j += room.Rect.H() / tilesPerRow {
+		for i := room.Rect.Min.X; i < room.Rect.Max.X; i += room.Rect.W() / tilesPerRow {
 			rec := pixel.R(i, j, i+(room.Rect.W()/tilesPerRow), j+(room.Rect.H()/tilesPerRow))
-			img.Color = colornames.Blue
-			tl := makeTile(rec)
+			tl := makeTile(rec, xInd, yInd)
 		VertexEval:
 			for _, obst := range room.Blocks {
 				for _, vertex := range obst.Vertices {
 					if rec.Contains(vertex) {
 						tl.Enterable = false
-						img.Color = colornames.Red
 						break VertexEval
 					}
 				}
 			}
-			img.Push(rec.Min)
-			img.Push(rec.Max)
-			img.Rectangle(0)
+
+			if (start.X >= i && start.Y >= j) && (start.X < (i+room.Rect.W()/tilesPerRow) && start.Y < (j+room.Rect.H()/tilesPerRow)) {
+				grid.StartIndex = (yInd * grain) + xInd
+			}
+			if (goal.X >= i && goal.Y >= j) && (goal.X < (i+room.Rect.W()/tilesPerRow) && goal.Y < (j+room.Rect.H()/tilesPerRow)) {
+				grid.GoalIndex = (yInd * grain) + xInd
+			}
+
 			grid.GridMap = append(grid.GridMap, tl)
+			xInd++
 		}
+		xInd = 0
+		yInd++
 	}
-	img.Draw(room.Target)
+
+	grid.GridMap[grid.StartIndex].gScore = 0
+	grid.GridMap[grid.StartIndex].fScore = grid.tileDist(grid.StartIndex, grid.GoalIndex)
+
 	return grid
+}
+
+func (grid *Grid) traceBack(traceInd int) {
+	img := imdraw.New(nil)
+	img.Color = colornames.Fuchsia
+	for grid.GridMap[traceInd].foundFrom != -1 {
+		img.Push(grid.GridMap[traceInd].Rect.Min)
+		img.Push(grid.GridMap[traceInd].Rect.Max)
+		img.Rectangle(0)
+		img.Draw(grid.Room.Target)
+	}
+}
+
+func (grid *Grid) tileDist(ind1, ind2 int) float64 {
+	v1 := grid.GridMap[ind1].Rect.Center()
+	v2 := grid.GridMap[ind2].Rect.Center()
+	return vecDist(v1, v2)
+
+}
+
+// AStar uses a* pathfinding to go between grid's start and goal posns
+func (grid *Grid) AStar() {
+	img := imdraw.New(nil)
+	img.Color = colornames.Hotpink
+
+	prior := make(priorityqueue.PriorityQueue, 1)
+	prior[0] = &priorityqueue.Elem{
+		Value:    grid.StartIndex,
+		Priority: 0,
+		Index:    0,
+	}
+	heap.Init(&prior)
+
+	elem := prior.Pop().(int)
+	ind := elem
+
+	for prior.Len() > 0 {
+		currentInd := prior.Pop().(int)
+		if currentInd == grid.GoalIndex {
+			grid.traceBack(currentInd)
+			fmt.Println("Found Goal")
+			return
+		}
+
+		neighbors := make([]int, 0, 8)
+		for xOffset := -1; xOffset <= 1; xOffset++ {
+			for yOffset := -1; yOffset <= 1; yOffset++ {
+				if !(xOffset == 0 && yOffset == 0) {
+					neighbor := (currentInd + (yOffset * grid.TilesPerRow) + xOffset)
+					if neighbor > 0 && neighbor < len(grid.GridMap) {
+						neighbors = append(neighbors, neighbor)
+					}
+				}
+
+			}
+		}
+
+		for _, neighbor := range neighbors {
+			if grid.GridMap[neighbor].foundFrom == -1 {
+				possibleGScore := grid.GridMap[currentInd].gScore + grid.tileDist(currentInd, neighbor)
+				if possibleGScore < grid.GridMap[neighbor].gScore {
+					grid.GridMap[neighbor].foundFrom = currentInd
+					grid.GridMap[neighbor].gScore = possibleGScore
+					grid.GridMap[neighbor].fScore = possibleGScore + grid.tileDist(neighbor, grid.GoalIndex)
+				}
+
+				item := &priorityqueue.Elem{
+					Value:    neighbor,
+					Priority: grid.GridMap[neighbor].fScore,
+					Index:    0,
+				}
+				prior.Push(item)
+			}
+		}
+
+	}
+
+	img.Push(grid.GridMap[ind].Rect.Min)
+	img.Push(grid.GridMap[ind].Rect.Max)
+	img.Rectangle(0)
+	img.Draw(grid.Room.Target)
 }
