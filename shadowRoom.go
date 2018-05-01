@@ -160,6 +160,25 @@ func run() {
 		win.SetMatrix(cam.Matrix)
 		room.Target.SetMatrix(pixel.IM.Moved(room.Target.Bounds().Center()))
 
+		// TESTING PRIORITY QUEUE
+		/*
+			prior := make(priorityqueue.PriorityQueue, 0)
+			heap.Init(&prior)
+			for testCount := 0; testCount < 10; testCount++ {
+				randomInt := rand.Intn(20)
+				item := &priorityqueue.Elem{
+					Value:    randomInt,
+					Priority: float64(randomInt),
+				}
+				heap.Push(&prior, item)
+			}
+			for prior.Len() > 1 {
+				fmt.Println(heap.Pop(&prior))
+			}
+
+			fmt.Print("\n")
+		*/
+
 		room.Target.Clear(pixel.Alpha(0))
 		// room.Disp()
 		// cir.Light(&room)

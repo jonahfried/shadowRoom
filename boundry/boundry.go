@@ -2,7 +2,6 @@ package boundry
 
 import (
 	"container/heap"
-	"fmt"
 	"math"
 	"math/rand"
 	priorityqueue "shadowRoom/priorityQueue"
@@ -220,6 +219,7 @@ type Tile struct {
 	xInd, yInd int
 
 	foundFrom int
+	reviewed  bool
 }
 
 func makeTile(rect pixel.Rect, xInd, yInd int) (tl Tile) {
@@ -229,6 +229,7 @@ func makeTile(rect pixel.Rect, xInd, yInd int) (tl Tile) {
 	tl.fScore = math.MaxFloat64
 	tl.xInd, tl.yInd = xInd, yInd
 	tl.foundFrom = -1
+	tl.reviewed = false
 	return tl
 }
 
@@ -302,6 +303,7 @@ func (grid *Grid) traceBack(traceInd int) {
 		img.Push(grid.GridMap[traceInd].Rect.Max)
 		img.Rectangle(0)
 		img.Draw(grid.Room.Target)
+		traceInd = grid.GridMap[traceInd].foundFrom
 	}
 }
 
@@ -317,58 +319,61 @@ func (grid *Grid) AStar() {
 	img := imdraw.New(nil)
 	img.Color = colornames.Hotpink
 
-	prior := make(priorityqueue.PriorityQueue, 1)
-	prior[0] = &priorityqueue.Elem{
-		Value:    grid.StartIndex,
-		Priority: 0,
-		Index:    0,
-	}
+	prior := make(priorityqueue.PriorityQueue, 0)
 	heap.Init(&prior)
 
-	elem := prior.Pop().(int)
-	ind := elem
+	start := &priorityqueue.Elem{
+		Value:    grid.StartIndex,
+		Priority: grid.GridMap[grid.StartIndex].fScore,
+	}
+	heap.Push(&prior, start)
 
 	for prior.Len() > 0 {
-		currentInd := prior.Pop().(int)
+		currentInd := heap.Pop(&prior).(int)
 		if currentInd == grid.GoalIndex {
 			grid.traceBack(currentInd)
-			fmt.Println("Found Goal")
 			return
 		}
+
+		grid.GridMap[currentInd].reviewed = true
 
 		neighbors := make([]int, 0, 8)
 		for xOffset := -1; xOffset <= 1; xOffset++ {
 			for yOffset := -1; yOffset <= 1; yOffset++ {
+
 				if !(xOffset == 0 && yOffset == 0) {
+
 					neighbor := (currentInd + (yOffset * grid.TilesPerRow) + xOffset)
-					if neighbor > 0 && neighbor < len(grid.GridMap) {
+					if neighbor >= 0 && neighbor < len(grid.GridMap) {
 						neighbors = append(neighbors, neighbor)
 					}
+
 				}
 
 			}
 		}
 
 		for _, neighbor := range neighbors {
-			if grid.GridMap[neighbor].foundFrom == -1 {
+			if !grid.GridMap[neighbor].reviewed {
 				possibleGScore := grid.GridMap[currentInd].gScore + grid.tileDist(currentInd, neighbor)
 				if possibleGScore < grid.GridMap[neighbor].gScore {
 					grid.GridMap[neighbor].foundFrom = currentInd
 					grid.GridMap[neighbor].gScore = possibleGScore
 					grid.GridMap[neighbor].fScore = possibleGScore + grid.tileDist(neighbor, grid.GoalIndex)
-				}
 
-				item := &priorityqueue.Elem{
-					Value:    neighbor,
-					Priority: grid.GridMap[neighbor].fScore,
-					Index:    0,
+					item := &priorityqueue.Elem{
+						Value:    neighbor,
+						Priority: grid.GridMap[neighbor].fScore,
+						// Index:    0,
+					}
+					heap.Push(&prior, item)
 				}
-				prior.Push(item)
 			}
 		}
 
 	}
 
+	ind := grid.StartIndex
 	img.Push(grid.GridMap[ind].Rect.Min)
 	img.Push(grid.GridMap[ind].Rect.Max)
 	img.Rectangle(0)
