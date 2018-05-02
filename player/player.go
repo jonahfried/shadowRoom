@@ -111,19 +111,40 @@ func (cir *Agent) Disp(win *pixelgl.Window) {
 // Light adds fading light (white circles) around an Agent's posn
 func (cir *Agent) Light(room *boundry.Place) {
 	img := imdraw.New(nil)
-	col := (pixel.ToRGBA(colornames.Whitesmoke)).Mul(pixel.Alpha(.1))
-	for fade := 80; fade > 1; fade-- {
+	col := (pixel.ToRGBA(colornames.Whitesmoke)).Mul(pixel.Alpha(.02))
+	for fade := 1; fade < 80; fade++ {
 		img.Color = col
 		img.Push(cir.Posn)
-		img.Circle(float64(fade*6), 0)
+		img.Circle(float64(fade*7), 0)
 		// col = col.Mul(pixel.Alpha(1 / float64(fade)))
-		col = (pixel.ToRGBA(colornames.Whitesmoke)).Mul(pixel.Alpha(1 / float64(fade)))
+		// col = (pixel.ToRGBA(colornames.Whitesmoke)).Mul(pixel.Alpha(.8 / (float64(fade))))
+		// col = col.Mul(pixel.Alpha(.95))
+
 	}
 
 	// room.Target.Clear(pixel.Alpha(0))
 	// room.Target.SetComposeMethod()
 	img.Draw(room.Target)
+
 }
+
+// // Light adds fading light (white circles) around an Agent's posn
+// func (cir *Agent) Light(room *boundry.Place) {
+// 	img := imdraw.New(nil)
+// 	col := (pixel.ToRGBA(colornames.Whitesmoke)).Mul(pixel.Alpha(.1))
+// 	for fade := 80; fade > 1; fade-- {
+// 		img.Color = col
+// 		img.Push(cir.Posn)
+// 		img.Circle(float64(fade*6), 0)
+// 		// col = col.Mul(pixel.Alpha(1 / float64(fade)))
+// 		col = (pixel.ToRGBA(colornames.Whitesmoke)).Mul(pixel.Alpha(.8 / float64(fade)))
+// 	}
+
+// 	// room.Target.Clear(pixel.Alpha(0))
+// 	// room.Target.SetComposeMethod()
+// 	img.Draw(room.Target)
+
+// }
 
 // Update is an agent method. Runs all necessary per-frame proccedures on agent.
 // Takes in a pixelgl.Window from which to accept inputs.
