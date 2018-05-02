@@ -78,7 +78,7 @@ func (monster *Creature) Update(room boundry.Place, target pixel.Vec) {
 }
 
 // Disp draws a creature based on its Img
-func (monster *Creature) Disp(win *pixelgl.Window) {
+func (monster *Creature) Disp(win *pixelgl.Canvas) {
 	monster.Img.Clear()
 	monster.Img.Push(monster.Posn)
 	monster.Img.Circle(20, 0)

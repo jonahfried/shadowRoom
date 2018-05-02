@@ -42,7 +42,7 @@ func MakePlace(rect pixel.Rect, numBlocks int, blocks ...Obsticle) (room Place) 
 		blockList := make([]Obsticle, 0)
 		for ind := 0; ind < numBlocks; ind++ {
 			// TODO: randomize more of the blocks
-			// -	Take the bounds and set variables for radius/stdDev
+			// -	Take the bounds and set variables for Radius/stdDev
 			// - 	Then make sure the vertex won't land out of bounds
 			// block := makeRandomBlock(50, 10, 6, pixel.V(400, 200))
 			// blc := makeRandomBlock(50, 10, 6, pixel.V((rand.Float64()*400), (rand.Float64()*250)))
@@ -74,9 +74,8 @@ func (room *Place) Disp() {
 	bcImg.Color = colornames.Black
 	for _, bc := range room.Blocks {
 		bc.Img.Draw(room.Target)
-
-		bcImg.Push(bc.center)
-		bcImg.Circle(bc.radius, 0)
+		bcImg.Push(bc.Center)
+		bcImg.Circle(bc.Radius, 0)
 	}
 	bcImg.Draw(room.Target)
 }
@@ -85,11 +84,11 @@ func (room *Place) Disp() {
 // it contains:
 //	 a list of vertices defining its bounds
 //	 and an *imdraw.IMdraw to store its look.
-//	 also stores a center and radius set if generated randomly to avoid overlap
+//	 also stores a Center and Radius set if generated randomly to avoid overlap
 type Obsticle struct {
 	Vertices []pixel.Vec
-	center   pixel.Vec
-	radius   float64
+	Center   pixel.Vec
+	Radius   float64
 
 	Img *imdraw.IMDraw
 }
@@ -99,8 +98,8 @@ type Obsticle struct {
 // returns an Obsticle
 func MakeObsticle(vertices []pixel.Vec, center pixel.Vec, radius float64) (obst Obsticle) {
 	obst.Vertices = vertices
-	obst.center = center
-	obst.radius = radius
+	obst.Center = center
+	obst.Radius = radius
 
 	obst.Img = imdraw.New(nil)
 
@@ -123,7 +122,7 @@ func MakeRandomBlock(radius, stdDev, vertScale float64, rect pixel.Rect, existin
 TryLoop:
 	for tries := 0; tries < 10; tries++ {
 		for _, blc := range existingBlocks {
-			if vecDist(blc.center, center) < (blc.radius + radius + stdDev) {
+			if vecDist(blc.Center, center) < (blc.Radius + radius + stdDev) {
 				centerX = rect.Center().X + (rand.Float64() * rect.W()) - (rect.W() / 2)
 				centerY = rect.Center().Y + (rand.Float64() * rect.H()) - (rect.H() / 2)
 				center = pixel.V(centerX, centerY)
@@ -136,7 +135,7 @@ TryLoop:
 	// <= ?
 	for angle := 2 * math.Pi / vertScale; angle < math.Pi*2; angle += 2 * math.Pi / vertScale {
 		r := rand.NormFloat64()*stdDev + radius
-		vertex := pixel.V(r*math.Cos(angle), (r*math.Sin(angle) + radius))
+		vertex := pixel.V(r*math.Cos(angle), (r * math.Sin(angle)))
 		vertex = vertex.Add(center)
 
 		vertex.X = math.Min(vertex.X, rect.Max.X)
@@ -279,7 +278,7 @@ func (room *Place) ToGrid(grain int, start, goal pixel.Vec) (grid Grid) {
 			tl := makeTile(rec, xInd, yInd)
 		VertexEval:
 			for _, obst := range room.Blocks {
-				if vecDist(obst.center, rec.Center()) < obst.radius {
+				if vecDist(obst.Center, rec.Center()) < obst.Radius {
 					tl.Enterable = false
 					break VertexEval
 				}

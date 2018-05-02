@@ -181,16 +181,18 @@ func run() {
 		*/
 
 		room.Target.Clear(pixel.Alpha(0))
-		room.Disp()
+		// room.Disp()
 		cir.Light(&room)
 		grid := room.ToGrid(27, blob.Posn, cir.Posn)
 		blobTarget := grid.AStar()
 
+		blob.Update(room, blobTarget)
+		room.Target.SetComposeMethod(pixel.ComposeIn)
+		blob.Disp(room.Target)
+		room.Target.SetComposeMethod(pixel.ComposeOver)
+
 		// room.Disp()
 		room.Target.Draw(win, pixel.IM) //.Moved(win.Bounds().Center()))
-
-		blob.Update(room, blobTarget)
-		blob.Disp(win)
 
 		illuminate(room, cir, point, win)
 
