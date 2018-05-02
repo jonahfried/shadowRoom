@@ -2,6 +2,7 @@ package boundry
 
 import (
 	"container/heap"
+	"fmt"
 	"math"
 	"math/rand"
 	priorityqueue "shadowRoom/priorityQueue"
@@ -59,7 +60,7 @@ func MakePlace(rect pixel.Rect, numBlocks int, blocks ...Obsticle) (room Place) 
 }
 
 // Disp updates and displays a room's Img
-func (room Place) Disp() {
+func (room *Place) Disp() {
 	// room.Target.Clear(pixel.Alpha(0))
 	// room.Target.Clear(colornames.Green)
 	room.Img.Clear()
@@ -68,6 +69,16 @@ func (room Place) Disp() {
 	room.Img.Push(room.Rect.Center().Add(room.Rect.Size().Scaled(.5)))
 	room.Img.Rectangle(3)
 	room.Img.Draw(room.Target)
+
+	bcImg := imdraw.New(nil)
+	bcImg.Color = colornames.Black
+	for _, bc := range room.Blocks {
+		bc.Img.Draw(room.Target)
+
+		bcImg.Push(bc.center)
+		bcImg.Circle(bc.radius, 0)
+	}
+	bcImg.Draw(room.Target)
 }
 
 // Obsticle is a data structure defining a boundry inside a room
@@ -122,6 +133,7 @@ TryLoop:
 		break TryLoop
 	}
 	vertices := make([]pixel.Vec, 0, 3)
+	// <= ?
 	for angle := 2 * math.Pi / vertScale; angle < math.Pi*2; angle += 2 * math.Pi / vertScale {
 		r := rand.NormFloat64()*stdDev + radius
 		vertex := pixel.V(r*math.Cos(angle), (r*math.Sin(angle) + radius))
@@ -135,7 +147,7 @@ TryLoop:
 
 		vertices = append(vertices, vertex)
 	}
-	return MakeObsticle(vertices, center, radius)
+	return MakeObsticle(vertices, center, radius+stdDev)
 }
 
 func vecDist(v1, v2 pixel.Vec) float64 {
@@ -267,12 +279,17 @@ func (room *Place) ToGrid(grain int, start, goal pixel.Vec) (grid Grid) {
 			tl := makeTile(rec, xInd, yInd)
 		VertexEval:
 			for _, obst := range room.Blocks {
-				for _, vertex := range obst.Vertices {
-					if rec.Contains(vertex) {
-						tl.Enterable = false
-						break VertexEval
-					}
+				if vecDist(obst.center, rec.Center()) < obst.radius {
+					tl.Enterable = false
+					break VertexEval
 				}
+
+				// for _, vertex := range obst.Vertices {
+				// 	if rec.Contains(vertex) {
+				// 		tl.Enterable = false
+				// 		break VertexEval
+				// 	}
+				// }
 			}
 
 			if (start.X >= i && start.Y >= j) && (start.X < (i+room.Rect.W()/tilesPerRow) && start.Y < (j+room.Rect.H()/tilesPerRow)) {
@@ -292,19 +309,38 @@ func (room *Place) ToGrid(grain int, start, goal pixel.Vec) (grid Grid) {
 	grid.GridMap[grid.StartIndex].gScore = 0
 	grid.GridMap[grid.StartIndex].fScore = grid.tileDist(grid.StartIndex, grid.GoalIndex)
 
+	// img := imdraw.New(nil)
+	// for _, tl := range grid.GridMap {
+	// 	img.Color = colornames.Red
+	// 	if tl.Enterable {
+	// 		img.Color = colornames.Blue
+	// 	}
+	// 	img.Push(tl.Rect.Min)
+	// 	img.Push(tl.Rect.Max)
+	// 	img.Rectangle(0)
+	// }
+	// img.Draw(grid.Room.Target)
+
 	return grid
 }
 
-func (grid *Grid) traceBack(traceInd int) {
-	img := imdraw.New(nil)
-	img.Color = colornames.Fuchsia
+func (grid *Grid) traceBack(traceInd int) pixel.Vec {
+	// img := imdraw.New(nil)
+	// img.Color = colornames.Fuchsia
 	for grid.GridMap[traceInd].foundFrom != -1 {
-		img.Push(grid.GridMap[traceInd].Rect.Min)
-		img.Push(grid.GridMap[traceInd].Rect.Max)
-		img.Rectangle(0)
-		img.Draw(grid.Room.Target)
-		traceInd = grid.GridMap[traceInd].foundFrom
+		// img.Push(grid.GridMap[traceInd].Rect.Min)
+		// img.Push(grid.GridMap[traceInd].Rect.Max)
+		// img.Rectangle(0)
+		// img.Draw(grid.Room.Target)
+
+		next := grid.GridMap[traceInd].foundFrom
+		if grid.GridMap[next].foundFrom == -1 {
+			return grid.GridMap[traceInd].Rect.Center()
+		}
+		traceInd = next
 	}
+	return grid.Goal
+
 }
 
 func (grid *Grid) tileDist(ind1, ind2 int) float64 {
@@ -315,9 +351,7 @@ func (grid *Grid) tileDist(ind1, ind2 int) float64 {
 }
 
 // AStar uses a* pathfinding to go between grid's start and goal posns
-func (grid *Grid) AStar() {
-	img := imdraw.New(nil)
-	img.Color = colornames.Hotpink
+func (grid *Grid) AStar() pixel.Vec {
 
 	prior := make(priorityqueue.PriorityQueue, 0)
 	heap.Init(&prior)
@@ -331,8 +365,7 @@ func (grid *Grid) AStar() {
 	for prior.Len() > 0 {
 		currentInd := heap.Pop(&prior).(int)
 		if currentInd == grid.GoalIndex {
-			grid.traceBack(currentInd)
-			return
+			return grid.traceBack(currentInd)
 		}
 
 		grid.GridMap[currentInd].reviewed = true
@@ -345,7 +378,11 @@ func (grid *Grid) AStar() {
 
 					neighbor := (currentInd + (yOffset * grid.TilesPerRow) + xOffset)
 					if neighbor >= 0 && neighbor < len(grid.GridMap) {
-						neighbors = append(neighbors, neighbor)
+
+						if grid.GridMap[neighbor].Enterable {
+							neighbors = append(neighbors, neighbor)
+						}
+
 					}
 
 				}
@@ -372,10 +409,6 @@ func (grid *Grid) AStar() {
 		}
 
 	}
-
-	ind := grid.StartIndex
-	img.Push(grid.GridMap[ind].Rect.Min)
-	img.Push(grid.GridMap[ind].Rect.Max)
-	img.Rectangle(0)
-	img.Draw(grid.Room.Target)
+	fmt.Println("Didn't Find Goal")
+	return grid.Start
 }

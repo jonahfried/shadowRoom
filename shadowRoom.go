@@ -151,6 +151,7 @@ func run() {
 	// Main Draw Loop:
 	for !win.Closed() {
 		win.Clear(colornames.Black)
+		room.Disp()
 
 		cir.Update(win, room)
 
@@ -180,21 +181,18 @@ func run() {
 		*/
 
 		room.Target.Clear(pixel.Alpha(0))
-		// room.Disp()
-		// cir.Light(&room)
-		grid := room.ToGrid(20, blob.Posn, cir.Posn)
-		grid.AStar()
+		room.Disp()
+		cir.Light(&room)
+		grid := room.ToGrid(27, blob.Posn, cir.Posn)
+		blobTarget := grid.AStar()
 
+		// room.Disp()
 		room.Target.Draw(win, pixel.IM) //.Moved(win.Bounds().Center()))
 
-		blob.Update(room)
+		blob.Update(room, blobTarget)
 		blob.Disp(win)
 
-		for _, bc := range room.Blocks {
-			bc.Img.Draw(win)
-		}
-
-		// illuminate(room, cir, point, win)
+		illuminate(room, cir, point, win)
 
 		cir.Disp(win)
 		win.Update()
