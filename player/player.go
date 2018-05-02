@@ -132,19 +132,19 @@ func (cir *Agent) Update(win *pixelgl.Window, room boundry.Place) {
 	cir.ReleaseHandler(win)
 
 	newPosn := cir.Posn.Add(cir.Vel)
-	// for _, obst := range room.Blocks {
-	// 	angle := math.Atan2(cir.Posn.Y-obst.Center.Y, cir.Posn.X-obst.Center.X)
-	// 	lerpAmount := vecDist(newPosn, obst.Center) / 20
-	// 	lerp := pixel.Lerp(obst.Center, newPosn, lerpAmount)
-	// 	landed := boundry.Obstruct(lerp, angle, room, obst)
-	// 	if !(vecDist(obst.Center, landed) > obst.Radius) {
-	// 		cir.Vel = limitVecMag(cir.Vel.Add(limitVecMag(cir.Acc, 1.5)), 10).Scaled(.88)
-	// 		if vecDist(cir.Vel, pixel.ZV) < .2 {
-	// 			cir.Vel = pixel.ZV
-	// 		}
-	// 		return
-	// 	}
-	// }
+	for _, obst := range room.Blocks {
+		// angle := math.Atan2(cir.Posn.Y-obst.Center.Y, cir.Posn.X-obst.Center.X)
+		// lerpAmount := vecDist(newPosn, obst.Center) / 20
+		// lerp := pixel.Lerp(obst.Center, newPosn, lerpAmount)
+		// landed := boundry.Obstruct(lerp, angle, room, obst)
+		if !(vecDist(obst.Center, newPosn) > obst.Radius) {
+			cir.Vel = limitVecMag(cir.Vel.Add(limitVecMag(cir.Acc, 1.5)), 10).Scaled(.88)
+			if vecDist(cir.Vel, pixel.ZV) < .2 {
+				cir.Vel = pixel.ZV
+			}
+			return
+		}
+	}
 
 	cir.Posn = newPosn
 	cir.Vel = limitVecMag(cir.Vel.Add(limitVecMag(cir.Acc, 1.5)), 10).Scaled(.88)

@@ -191,7 +191,7 @@ func run() {
 		blob.Disp(room.Target)
 		room.Target.SetComposeMethod(pixel.ComposeOver)
 
-		// room.Disp()
+		room.Disp()
 		room.Target.Draw(win, pixel.IM) //.Moved(win.Bounds().Center()))
 
 		illuminate(room, cir, point, win)

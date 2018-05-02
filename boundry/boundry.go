@@ -70,14 +70,16 @@ func (room *Place) Disp() {
 	room.Img.Rectangle(3)
 	room.Img.Draw(room.Target)
 
-	bcImg := imdraw.New(nil)
-	bcImg.Color = colornames.Black
+	// bcImg := imdraw.New(nil)
+	// bcImg.Color = colornames.Black
+	room.Target.SetComposeMethod(pixel.ComposeIn)
 	for _, bc := range room.Blocks {
 		bc.Img.Draw(room.Target)
-		bcImg.Push(bc.Center)
-		bcImg.Circle(bc.Radius, 0)
+		// bcImg.Push(bc.Center)
+		// bcImg.Circle(bc.Radius, 0)
 	}
-	bcImg.Draw(room.Target)
+	room.Target.SetComposeMethod(pixel.ComposeOver)
+	// bcImg.Draw(room.Target)
 }
 
 // Obsticle is a data structure defining a boundry inside a room
@@ -102,12 +104,13 @@ func MakeObsticle(vertices []pixel.Vec, center pixel.Vec, radius float64) (obst 
 	obst.Radius = radius
 
 	obst.Img = imdraw.New(nil)
+	obst.Img.EndShape = 1
 
-	obst.Img.Color = colornames.Darkgrey
+	obst.Img.Color = colornames.Burlywood
 	for _, vert := range obst.Vertices {
 		obst.Img.Push(vert)
 	}
-	obst.Img.Polygon(0)
+	obst.Img.Polygon(8)
 
 	return obst
 }
