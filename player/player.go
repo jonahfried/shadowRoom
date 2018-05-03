@@ -1,8 +1,10 @@
 package player
 
 import (
+	"fmt"
 	"math"
 	"shadowRoom/boundry"
+	"shadowRoom/creature"
 
 	"github.com/faiface/pixel"
 	"github.com/faiface/pixel/imdraw"
@@ -22,11 +24,16 @@ type Agent struct {
 	Spacing int
 	Count   int
 
+	Cam Camera
+
+	Monsters []creature.Creature
+	Shots    []Shot
+
 	Img *imdraw.IMDraw
 }
 
 // MakeAgent creates a new agent starting at a given (x, y) coordinate
-func MakeAgent(x, y float64) (cir Agent) {
+func MakeAgent(x, y float64, win *pixelgl.Window) (cir Agent) {
 	cir.Posn = pixel.V(x, y)
 	cir.Vel = pixel.ZV
 	cir.Acc = pixel.ZV
@@ -34,15 +41,35 @@ func MakeAgent(x, y float64) (cir Agent) {
 	cir.Shade = true
 	cir.Fill = true
 
+	cir.Cam = MakeCamera(cir.Posn, win)
+
 	cir.Level = .02
 	cir.Spacing = 6
 	cir.Count = 88
+
+	cir.Monsters = make([]creature.Creature, 0)
+	cir.Shots = make([]Shot, 0)
 
 	cir.Img = imdraw.New(nil)
 	cir.Img.Color = colornames.Purple
 	cir.Img.Push(pixel.V(500, 350))
 	cir.Img.Circle(20, 0)
 	return cir
+}
+
+// A Shot keeps track of the players attacks
+type Shot struct {
+	Posn1, Posn2, Vel pixel.Vec
+}
+
+func (cir Agent) fire(win *pixelgl.Window) (bullet Shot) {
+	mousePosn := cir.Cam.Matrix.Unproject(win.MousePosition())
+	directionVec := mousePosn.Sub(cir.Posn)
+	directionVec = directionVec.Scaled(1 / magnitude(directionVec))
+	bullet.Posn1 = cir.Posn
+	bullet.Posn2 = cir.Posn.Add(directionVec.Scaled(10))
+	bullet.Vel = directionVec.Scaled(10)
+	return bullet
 }
 
 // Vector limitation. Takes in a pixel.Vec and a float64.
@@ -89,7 +116,6 @@ func (cir *Agent) PressHandler(win *pixelgl.Window) {
 	if win.JustPressed(pixelgl.KeyF) {
 		cir.Fill = !cir.Fill
 	}
-
 	if win.JustPressed(pixelgl.KeyUp) {
 		cir.Level += .001
 	}
@@ -107,6 +133,10 @@ func (cir *Agent) PressHandler(win *pixelgl.Window) {
 	}
 	if win.Pressed(pixelgl.KeyPeriod) {
 		cir.Count++
+	}
+
+	if win.JustPressed(pixelgl.MouseButton1) {
+		cir.Shots = append(cir.Shots, cir.fire(win))
 	}
 }
 
@@ -129,9 +159,19 @@ func (cir *Agent) ReleaseHandler(win *pixelgl.Window) {
 
 // Disp Handles display of an agent. Clears, pushes, adds shape, and draws.
 func (cir *Agent) Disp(win *pixelgl.Window) {
-	cir.Img.Clear()
 	cir.Img.Push(cir.Posn)
 	cir.Img.Circle(20, 0)
+	cir.Img.Draw(win)
+}
+
+// DispShots displays shots
+func (cir *Agent) DispShots(win *pixelgl.Window) {
+	cir.Img.Clear()
+	for _, bullet := range cir.Shots {
+		cir.Img.Push(bullet.Posn1)
+		cir.Img.Push(bullet.Posn2)
+		cir.Img.Line(3)
+	}
 	cir.Img.Draw(win)
 }
 
@@ -257,6 +297,54 @@ func (cir *Agent) Update(win *pixelgl.Window, room boundry.Place) {
 
 	cir.Posn.Y = math.Max(cir.Posn.Y-20, room.Rect.Min.Y) + 20
 	cir.Posn.Y = math.Min(cir.Posn.Y+20, room.Rect.Max.Y) - 20
+
+	// Update Shots
+	for bulletInd := len(cir.Shots) - 1; bulletInd >= 0; bulletInd-- { //range cir.Shots {
+		cir.Shots[bulletInd].Posn1 = cir.Shots[bulletInd].Posn1.Add(cir.Shots[bulletInd].Vel)
+		cir.Shots[bulletInd].Posn2 = cir.Shots[bulletInd].Posn2.Add(cir.Shots[bulletInd].Vel)
+
+		// midPoint := (cir.Shots[bulletInd].Posn1.Add(cir.Shots[bulletInd].Posn2)).Scaled(1 / 2)
+		for monsterInd := range cir.Monsters {
+			if vecDist(cir.Shots[bulletInd].Posn2, cir.Monsters[monsterInd].Posn) < 20 {
+				fmt.Println("shot")
+				cir.Monsters[monsterInd].Health--
+				// BAD
+				// if len(cir.Shots) > 0 {
+				// 	cir.Shots
+
+				// }
+			}
+		}
+	}
+	filter(&cir.Monsters)
+}
+
+// // Update Shots
+// for bulletInd := range cir.Shots {
+// 	cir.Shots[bulletInd].Posn1 = cir.Shots[bulletInd].Posn1.Add(cir.Shots[bulletInd].Vel)
+// 	cir.Shots[bulletInd].Posn2 = cir.Shots[bulletInd].Posn2.Add(cir.Shots[bulletInd].Vel)
+
+// 	// midPoint := (cir.Shots[bulletInd].Posn1.Add(cir.Shots[bulletInd].Posn2)).Scaled(1 / 2)
+// 	for _, monster := range cir.Monsters {
+// 		if vecDist(cir.Shots[bulletInd].Posn2, monster.Posn) < 20 {
+// 			fmt.Println("shot")
+// 			monster.Health--
+// 			// BAD
+// 			// if len(cir.Shots) > 0 {
+// 			// 	cir.Shots[bulletInd] = cir.Shots[len(cir.Shots)-1]
+// 			// }
+// 		}
+// 	}
+// }
+// cir.Monsters = filter(cir.Monsters)
+
+func filter(monsters *[]creature.Creature) {
+	for monsterInd := 0; monsterInd < len(*monsters); monsterInd++ {
+		if (*monsters)[monsterInd].Health <= 0 {
+			(*monsters)[monsterInd] = (*monsters)[len(*monsters)-1]
+			(*monsters) = (*monsters)[:len(*monsters)-1]
+		}
+	}
 }
 
 func vecDist(v1, v2 pixel.Vec) float64 {

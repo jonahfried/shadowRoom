@@ -16,15 +16,17 @@ import (
 // - visual representation (*imdraw.IMDraw)
 type Creature struct {
 	Posn, Vel pixel.Vec
+	Health    int
 
 	Img *imdraw.IMDraw
 }
 
-// MakeCreature takes a starting x and y (float64), and returns a creature
+// MakeCreature takes a starting x and y (float64), and returns a *Creature
 func MakeCreature(x, y float64) (monster Creature) {
 	monster.Posn = pixel.V(x, y)
 	monster.Vel = pixel.V(0, 0)
 
+	monster.Health = 10
 	monster.Img = imdraw.New(nil)
 	monster.Img.Color = colornames.Darkolivegreen
 
