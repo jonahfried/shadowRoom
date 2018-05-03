@@ -18,6 +18,10 @@ type Agent struct {
 	Shade bool
 	Fill  bool
 
+	Level   float64
+	Spacing int
+	Count   int
+
 	Img *imdraw.IMDraw
 }
 
@@ -29,6 +33,10 @@ func MakeAgent(x, y float64) (cir Agent) {
 
 	cir.Shade = true
 	cir.Fill = true
+
+	cir.Level = .02
+	cir.Spacing = 6
+	cir.Count = 88
 
 	cir.Img = imdraw.New(nil)
 	cir.Img.Color = colornames.Purple
@@ -81,6 +89,25 @@ func (cir *Agent) PressHandler(win *pixelgl.Window) {
 	if win.JustPressed(pixelgl.KeyF) {
 		cir.Fill = !cir.Fill
 	}
+
+	if win.JustPressed(pixelgl.KeyUp) {
+		cir.Level += .001
+	}
+	if win.JustPressed(pixelgl.KeyDown) {
+		cir.Level -= .001
+	}
+	if win.JustPressed(pixelgl.KeyRight) {
+		cir.Spacing++
+	}
+	if win.JustPressed(pixelgl.KeyLeft) {
+		cir.Spacing--
+	}
+	if win.Pressed(pixelgl.KeyComma) {
+		cir.Count--
+	}
+	if win.Pressed(pixelgl.KeyPeriod) {
+		cir.Count++
+	}
 }
 
 // ReleaseHandler Handles key releases.
@@ -108,14 +135,18 @@ func (cir *Agent) Disp(win *pixelgl.Window) {
 	cir.Img.Draw(win)
 }
 
+func magnitude(vec pixel.Vec) float64 {
+	return vecDist(pixel.ZV, vec)
+}
+
 // Light adds fading light (white circles) around an Agent's posn
 func (cir *Agent) Light(room *boundry.Place) {
 	img := imdraw.New(nil)
-	col := (pixel.ToRGBA(colornames.Whitesmoke)).Mul(pixel.Alpha(.02))
-	for fade := 1; fade < 80; fade++ {
+	col := (pixel.ToRGBA(colornames.Whitesmoke)).Mul(pixel.Alpha(cir.Level))
+	for fade := 1; fade < cir.Count; fade++ {
 		img.Color = col
 		img.Push(cir.Posn)
-		img.Circle(float64(fade*7), 0)
+		img.Circle(float64(fade*cir.Spacing), 0)
 		// col = col.Mul(pixel.Alpha(1 / float64(fade)))
 		// col = (pixel.ToRGBA(colornames.Whitesmoke)).Mul(pixel.Alpha(.8 / (float64(fade))))
 		// col = col.Mul(pixel.Alpha(.95))
@@ -152,26 +183,74 @@ func (cir *Agent) Update(win *pixelgl.Window, room boundry.Place) {
 	cir.PressHandler(win)
 	cir.ReleaseHandler(win)
 
-	newPosn := cir.Posn.Add(cir.Vel)
-	for _, obst := range room.Blocks {
-		// angle := math.Atan2(cir.Posn.Y-obst.Center.Y, cir.Posn.X-obst.Center.X)
-		// lerpAmount := vecDist(newPosn, obst.Center) / 20
-		// lerp := pixel.Lerp(obst.Center, newPosn, lerpAmount)
-		// landed := boundry.Obstruct(lerp, angle, room, obst)
-		if !(vecDist(obst.Center, newPosn) > obst.Radius) {
-			cir.Vel = limitVecMag(cir.Vel.Add(limitVecMag(cir.Acc, 1.5)), 10).Scaled(.88)
-			if vecDist(cir.Vel, pixel.ZV) < .2 {
-				cir.Vel = pixel.ZV
-			}
-			return
-		}
-	}
+	// if vecDist(cir.Vel, pixel.ZV) < .2 {
+	// 	cir.Vel = pixel.ZV
+	// }
 
-	cir.Posn = newPosn
-	cir.Vel = limitVecMag(cir.Vel.Add(limitVecMag(cir.Acc, 1.5)), 10).Scaled(.88)
-	if vecDist(cir.Vel, pixel.ZV) < .2 {
-		cir.Vel = pixel.ZV
+	center := cir.Posn
+	radius := 20.0
+	for _, obst := range room.Blocks {
+
+		for vertexInd := 1; vertexInd < len(obst.Vertices); vertexInd++ {
+			end1 := obst.Vertices[vertexInd]
+			end2 := obst.Vertices[vertexInd-1]
+			segVec := end2.Sub(end1)
+			unitSegVec := segVec.Scaled(1 / magnitude(segVec))
+			centerOffset := center.Sub(end1)
+			projMag := centerOffset.Dot(unitSegVec)
+			projVec := unitSegVec.Scaled(projMag)
+			var closest pixel.Vec
+
+			if projMag < 0 {
+				closest = end1
+			} else if projMag > magnitude(segVec) {
+				closest = end2
+			} else {
+				closest = end1.Add(projVec)
+			}
+
+			dist := center.Sub(closest)
+
+			if magnitude(dist) < (radius + 4) {
+				offset := (dist.Scaled(1 / magnitude(dist))).Scaled((radius + 4) - magnitude(dist))
+				offset = offset.Scaled(.30)
+				cir.Vel = (cir.Vel.Add(offset)).Scaled(.88)
+			}
+		}
+
+		end1 := obst.Vertices[0]
+		end2 := obst.Vertices[len(obst.Vertices)-1]
+		segVec := end2.Sub(end1)
+		unitSegVec := segVec.Scaled(1 / magnitude(segVec))
+		centerOffset := center.Sub(end1)
+		projMag := centerOffset.Dot(unitSegVec)
+		projVec := unitSegVec.Scaled(projMag)
+		var closest pixel.Vec
+
+		if projMag < 0 {
+			closest = end1
+		} else if projMag > magnitude(segVec) {
+			closest = end2
+		} else {
+			closest = end1.Add(projVec)
+		}
+
+		dist := center.Sub(closest)
+
+		if magnitude(dist) < (radius + 4) {
+			offset := (dist.Scaled(1 / magnitude(dist))).Scaled((radius + 4) - magnitude(dist))
+			offset = offset.Scaled(.30)
+			cir.Vel = (cir.Vel.Add(offset)).Scaled(.88)
+		}
+
 	}
+	cir.Vel = limitVecMag(cir.Vel.Add(limitVecMag(cir.Acc, 1.5)), 10).Scaled(.88)
+
+	cir.Posn = cir.Posn.Add(cir.Vel)
+	// cir.Vel = limitVecMag(cir.Vel.Add(limitVecMag(cir.Acc, 1.5)), 10).Scaled(.88)
+	// if vecDist(cir.Vel, pixel.ZV) < .2 {
+	// 	cir.Vel = pixel.ZV
+	// }
 
 	cir.Posn.X = math.Max(cir.Posn.X-20, room.Rect.Min.X) + 20
 	cir.Posn.X = math.Min(cir.Posn.X+20, room.Rect.Max.X) - 20

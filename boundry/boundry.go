@@ -281,7 +281,7 @@ func (room *Place) ToGrid(grain int, start, goal pixel.Vec) (grid Grid) {
 			tl := makeTile(rec, xInd, yInd)
 		VertexEval:
 			for _, obst := range room.Blocks {
-				if vecDist(obst.Center, rec.Center()) < obst.Radius {
+				if vecDist(obst.Center, rec.Center()) < obst.Radius+4 {
 					tl.Enterable = false
 					break VertexEval
 				}

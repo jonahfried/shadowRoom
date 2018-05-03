@@ -45,16 +45,78 @@ func vecDist(v1, v2 pixel.Vec) float64 {
 	return math.Sqrt(math.Pow(v1.X-v2.X, 2) + math.Pow(v1.Y-v2.Y, 2))
 }
 
+func magnitude(vec pixel.Vec) float64 {
+	return vecDist(pixel.ZV, vec)
+}
+
 // Update is a method for a creature, taking in a room
 // returning nothing, it alters the position and velocity of the creature
 func (monster *Creature) Update(room boundry.Place, target pixel.Vec) {
-	acc := limitVecMag(target.Sub(monster.Posn), vecDist(monster.Posn, target)/10)
+	acc := target.Sub(monster.Posn) //limitVecMag(target.Sub(monster.Posn), vecDist(monster.Posn, target)/10)
 
 	acc = acc.Sub(monster.Vel)
-	acc = acc.Scaled(.1)
+	acc = acc.Scaled(.095)
 	monster.Vel = monster.Vel.Add(acc)
-	monster.Vel = limitVecMag(monster.Vel, 11)
+	monster.Vel = limitVecMag(monster.Vel, 6)
 	// monster.Vel = monster.Vel.Scaled(1.3)
+
+	center := monster.Posn
+	radius := 20.0
+	for _, obst := range room.Blocks {
+
+		for vertexInd := 1; vertexInd < len(obst.Vertices); vertexInd++ {
+			end1 := obst.Vertices[vertexInd]
+			end2 := obst.Vertices[vertexInd-1]
+			segVec := end2.Sub(end1)
+			unitSegVec := segVec.Scaled(1 / magnitude(segVec))
+			centerOffset := center.Sub(end1)
+			projMag := centerOffset.Dot(unitSegVec)
+			projVec := unitSegVec.Scaled(projMag)
+			var closest pixel.Vec
+
+			if projMag < 0 {
+				closest = end1
+			} else if projMag > magnitude(segVec) {
+				closest = end2
+			} else {
+				closest = end1.Add(projVec)
+			}
+
+			dist := center.Sub(closest)
+
+			if magnitude(dist) < (radius + 4) {
+				offset := (dist.Scaled(1 / magnitude(dist))).Scaled((radius + 4) - magnitude(dist))
+				offset = offset.Scaled(.30)
+				monster.Vel = (monster.Vel.Add(offset)).Scaled(.88)
+			}
+		}
+
+		end1 := obst.Vertices[0]
+		end2 := obst.Vertices[len(obst.Vertices)-1]
+		segVec := end2.Sub(end1)
+		unitSegVec := segVec.Scaled(1 / magnitude(segVec))
+		centerOffset := center.Sub(end1)
+		projMag := centerOffset.Dot(unitSegVec)
+		projVec := unitSegVec.Scaled(projMag)
+		var closest pixel.Vec
+
+		if projMag < 0 {
+			closest = end1
+		} else if projMag > magnitude(segVec) {
+			closest = end2
+		} else {
+			closest = end1.Add(projVec)
+		}
+
+		dist := center.Sub(closest)
+
+		if magnitude(dist) < (radius + 4) {
+			offset := (dist.Scaled(1 / magnitude(dist))).Scaled((radius + 4) - magnitude(dist))
+			offset = offset.Scaled(.30)
+			monster.Vel = (monster.Vel.Add(offset)).Scaled(.88)
+		}
+
+	}
 
 	monster.Posn = monster.Posn.Add(monster.Vel)
 

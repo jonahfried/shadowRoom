@@ -126,6 +126,7 @@ func run() {
 		Title:  "shadowRoom",
 		Bounds: pixel.R(0, 0, 1350, 725),
 		VSync:  true,
+		// Resizable: true,
 	}
 	win, err := pixelgl.NewWindow(cfg)
 	if err != nil {
@@ -183,7 +184,7 @@ func run() {
 		room.Target.Clear(pixel.Alpha(0))
 		// room.Disp()
 		cir.Light(&room)
-		grid := room.ToGrid(27, blob.Posn, cir.Posn)
+		grid := room.ToGrid(40, blob.Posn, cir.Posn)
 		blobTarget := grid.AStar()
 
 		blob.Update(room, blobTarget)
@@ -197,6 +198,7 @@ func run() {
 		illuminate(room, cir, point, win)
 
 		cir.Disp(win)
+
 		win.Update()
 		// time.Sleep(1 / 2 * time.Second)
 	}
