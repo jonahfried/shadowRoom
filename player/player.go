@@ -28,12 +28,15 @@ type Agent struct {
 
 	Monsters []creature.Creature
 	Shots    []Shot
+	ShotsImg *imdraw.IMDraw
 
-	Img *imdraw.IMDraw
+	Fade   pixel.Picture
+	Sprite *pixel.Sprite
+	Img    *imdraw.IMDraw
 }
 
 // MakeAgent creates a new agent starting at a given (x, y) coordinate
-func MakeAgent(x, y float64, win *pixelgl.Window) (cir Agent) {
+func MakeAgent(x, y float64, win *pixelgl.Window, sprite *pixel.Sprite) (cir Agent) {
 	cir.Posn = pixel.V(x, y)
 	cir.Vel = pixel.ZV
 	cir.Acc = pixel.ZV
@@ -43,12 +46,17 @@ func MakeAgent(x, y float64, win *pixelgl.Window) (cir Agent) {
 
 	cir.Cam = MakeCamera(cir.Posn, win)
 
-	cir.Level = .02
+	cir.Level = 0.02
 	cir.Spacing = 6
 	cir.Count = 88
 
 	cir.Monsters = make([]creature.Creature, 0)
 	cir.Shots = make([]Shot, 0)
+	cir.ShotsImg = imdraw.New(nil)
+	cir.ShotsImg.Color = pixel.ToRGBA(colornames.Firebrick).Mul(pixel.Alpha(.7))
+
+	cir.Fade = sprite.Picture()
+	cir.Sprite = sprite
 
 	cir.Img = imdraw.New(nil)
 	cir.Img.Color = colornames.Purple
@@ -68,8 +76,19 @@ func (cir Agent) fire(win *pixelgl.Window) (bullet Shot) {
 	directionVec = directionVec.Scaled(1 / magnitude(directionVec))
 	bullet.Posn1 = cir.Posn
 	bullet.Posn2 = cir.Posn.Add(directionVec.Scaled(10))
-	bullet.Vel = directionVec.Scaled(10)
+	bullet.Vel = directionVec.Scaled(14)
 	return bullet
+}
+
+// DispShots displays shots
+func (cir *Agent) DispShots(win *pixelgl.Canvas) {
+	cir.ShotsImg.Clear()
+	for _, bullet := range cir.Shots {
+		cir.ShotsImg.Push(bullet.Posn1)
+		cir.ShotsImg.Push(bullet.Posn2)
+		cir.ShotsImg.Line(4)
+	}
+	cir.ShotsImg.Draw(win)
 }
 
 // Vector limitation. Takes in a pixel.Vec and a float64.
@@ -159,19 +178,9 @@ func (cir *Agent) ReleaseHandler(win *pixelgl.Window) {
 
 // Disp Handles display of an agent. Clears, pushes, adds shape, and draws.
 func (cir *Agent) Disp(win *pixelgl.Window) {
+	cir.Img.Clear()
 	cir.Img.Push(cir.Posn)
 	cir.Img.Circle(20, 0)
-	cir.Img.Draw(win)
-}
-
-// DispShots displays shots
-func (cir *Agent) DispShots(win *pixelgl.Window) {
-	cir.Img.Clear()
-	for _, bullet := range cir.Shots {
-		cir.Img.Push(bullet.Posn1)
-		cir.Img.Push(bullet.Posn2)
-		cir.Img.Line(3)
-	}
 	cir.Img.Draw(win)
 }
 
@@ -180,8 +189,17 @@ func magnitude(vec pixel.Vec) float64 {
 }
 
 // Light adds fading light (white circles) around an Agent's posn
+// func (cir *Agent) Light(room *boundry.Place) {
+// 	room.Target.SetComposeMethod(pixel.ComposePlus)
+// 	cir.Sprite.DrawColorMask(room.Target, pixel.IM.Moved(cir.Posn), pixel.Alpha(cir.Level))
+// 	// cir.Sprite.Draw(room.Target, pixel.IM.Moved(cir.Posn))
+// 	// room.Target.SetComposeMethod(pixel.ComposeIn)
+// }
+
+// Light adds fading light (white circles) around an Agent's posn
 func (cir *Agent) Light(room *boundry.Place) {
 	img := imdraw.New(nil)
+	img.Precision = 32
 	col := (pixel.ToRGBA(colornames.Whitesmoke)).Mul(pixel.Alpha(cir.Level))
 	for fade := 1; fade < cir.Count; fade++ {
 		img.Color = col

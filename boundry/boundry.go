@@ -17,9 +17,10 @@ import (
 // as well as a slice of Blocks that it contains
 // and a slice of its vertices
 type Place struct {
-	Rect     pixel.Rect
-	Blocks   []Obsticle
-	Vertices []pixel.Vec
+	Rect               pixel.Rect
+	Blocks             []Obsticle
+	Vertices           []pixel.Vec
+	GridRepresentation Grid
 
 	Img    *imdraw.IMDraw
 	Target *pixelgl.Canvas
@@ -252,10 +253,6 @@ type Grid struct {
 	GridMap     []Tile
 	Room        *Place
 	TilesPerRow int
-
-	Start, Goal pixel.Vec
-	StartIndex  int
-	GoalIndex   int
 }
 
 func makeGrid(room *Place) (grid Grid) {
@@ -266,12 +263,11 @@ func makeGrid(room *Place) (grid Grid) {
 
 // ToGrid is a method for a Place, returning a rough tile-based
 // representation of where in the room is enterable.
-func (room *Place) ToGrid(grain int, start, goal pixel.Vec) (grid Grid) {
+func (room *Place) ToGrid(grain int) {
+	var grid Grid
 	tilesPerRow := float64(grain)
 	grid = makeGrid(room)
 	grid.TilesPerRow = grain
-	grid.Start = start
-	grid.Goal = goal
 
 	xInd := 0
 	yInd := 0
@@ -294,12 +290,12 @@ func (room *Place) ToGrid(grain int, start, goal pixel.Vec) (grid Grid) {
 				// }
 			}
 
-			if (start.X >= i && start.Y >= j) && (start.X < (i+room.Rect.W()/tilesPerRow) && start.Y < (j+room.Rect.H()/tilesPerRow)) {
-				grid.StartIndex = (yInd * grain) + xInd
-			}
-			if (goal.X >= i && goal.Y >= j) && (goal.X < (i+room.Rect.W()/tilesPerRow) && goal.Y < (j+room.Rect.H()/tilesPerRow)) {
-				grid.GoalIndex = (yInd * grain) + xInd
-			}
+			// if (start.X >= i && start.Y >= j) && (start.X < (i+room.Rect.W()/tilesPerRow) && start.Y < (j+room.Rect.H()/tilesPerRow)) {
+			// 	grid.StartIndex = (yInd * grain) + xInd
+			// }
+			// if (goal.X >= i && goal.Y >= j) && (goal.X < (i+room.Rect.W()/tilesPerRow) && goal.Y < (j+room.Rect.H()/tilesPerRow)) {
+			// 	grid.GoalIndex = (yInd * grain) + xInd
+			// }
 
 			grid.GridMap = append(grid.GridMap, tl)
 			xInd++
@@ -307,9 +303,6 @@ func (room *Place) ToGrid(grain int, start, goal pixel.Vec) (grid Grid) {
 		xInd = 0
 		yInd++
 	}
-
-	grid.GridMap[grid.StartIndex].gScore = 0
-	grid.GridMap[grid.StartIndex].fScore = grid.tileDist(grid.StartIndex, grid.GoalIndex)
 
 	// img := imdraw.New(nil)
 	// for _, tl := range grid.GridMap {
@@ -323,10 +316,11 @@ func (room *Place) ToGrid(grain int, start, goal pixel.Vec) (grid Grid) {
 	// }
 	// img.Draw(grid.Room.Target)
 
-	return grid
+	// return grid
+	room.GridRepresentation = grid
 }
 
-func (grid *Grid) traceBack(traceInd int) pixel.Vec {
+func (grid *Grid) traceBack(traceInd int, goal pixel.Vec) pixel.Vec {
 	// img := imdraw.New(nil)
 	// img.Color = colornames.Fuchsia
 	for grid.GridMap[traceInd].foundFrom != -1 {
@@ -341,7 +335,7 @@ func (grid *Grid) traceBack(traceInd int) pixel.Vec {
 		}
 		traceInd = next
 	}
-	return grid.Goal
+	return goal
 
 }
 
@@ -353,21 +347,36 @@ func (grid *Grid) tileDist(ind1, ind2 int) float64 {
 }
 
 // AStar uses a* pathfinding to go between grid's start and goal posns
-func (grid *Grid) AStar() pixel.Vec {
+func AStar(grid Grid, startPosn, goal pixel.Vec) pixel.Vec {
+
+	min := grid.Room.Rect.Min
+
+	shiftedStart := startPosn.Sub(min)
+	shiftedGoal := startPosn.Sub(min)
+
+	startXInd := int(math.Ceil(shiftedStart.X / float64(grid.TilesPerRow)))
+	startYInd := int(math.Ceil(shiftedStart.Y / float64(grid.TilesPerRow)))
+	startIndex := (startYInd * grid.TilesPerRow) + startXInd
+
+	// fmt.Println(min, startPosn, shiftedStart, startIndex, "\n")
+
+	goalXInd := int(math.Ceil(shiftedGoal.X / float64(grid.TilesPerRow)))
+	goalYInd := int(math.Ceil(shiftedGoal.Y / float64(grid.TilesPerRow)))
+	goalIndex := (goalYInd * grid.TilesPerRow) + goalXInd
 
 	prior := make(priorityqueue.PriorityQueue, 0)
 	heap.Init(&prior)
 
 	start := &priorityqueue.Elem{
-		Value:    grid.StartIndex,
-		Priority: grid.GridMap[grid.StartIndex].fScore,
+		Value:    startIndex,
+		Priority: grid.GridMap[startIndex].fScore,
 	}
 	heap.Push(&prior, start)
 
 	for prior.Len() > 0 {
 		currentInd := heap.Pop(&prior).(int)
-		if currentInd == grid.GoalIndex {
-			return grid.traceBack(currentInd)
+		if currentInd == goalIndex {
+			return grid.traceBack(currentInd, goal)
 		}
 
 		grid.GridMap[currentInd].reviewed = true
@@ -398,7 +407,7 @@ func (grid *Grid) AStar() pixel.Vec {
 				if possibleGScore < grid.GridMap[neighbor].gScore {
 					grid.GridMap[neighbor].foundFrom = currentInd
 					grid.GridMap[neighbor].gScore = possibleGScore
-					grid.GridMap[neighbor].fScore = possibleGScore + grid.tileDist(neighbor, grid.GoalIndex)
+					grid.GridMap[neighbor].fScore = possibleGScore + grid.tileDist(neighbor, goalIndex)
 
 					item := &priorityqueue.Elem{
 						Value:    neighbor,
@@ -412,5 +421,5 @@ func (grid *Grid) AStar() pixel.Vec {
 
 	}
 	fmt.Println("Didn't Find Goal")
-	return grid.Start
+	return startPosn
 }

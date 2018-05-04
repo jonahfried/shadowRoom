@@ -164,7 +164,7 @@ func run() {
 		panic(err)
 	}
 
-	lightingSprite := pixel.NewSprite(lightingPic, pixel.R(0, 0, 480, 480))
+	lightingSprite := pixel.NewSprite(lightingPic, pixel.R(0, 0, 1200, 1200))
 
 	// rooms := make(map[pixel.Vec]struct{ bottemLeft, topRight float64 })
 
@@ -176,6 +176,7 @@ func run() {
 
 	// TODO: Make room bounds relative to Bounds
 	room := boundry.MakePlace(pixel.R(-700, -600, 700, 600), 11)
+	room.ToGrid(40)
 
 	point := imdraw.New(nil)
 	point.Color = colornames.Black
@@ -246,25 +247,25 @@ func run() {
 		// 	cir.Monsters = append(cir.Monsters, creature.MakeCreature(0, 0))
 		// }
 
+		room.Target.SetComposeMethod(pixel.ComposeIn)
 		for monsterInd := range cir.Monsters {
-			grid := room.ToGrid(40, cir.Monsters[monsterInd].Posn, cir.Posn)
-			monsterTarget := grid.AStar()
+			monsterTarget := boundry.AStar(room.GridRepresentation, cir.Monsters[monsterInd].Posn, cir.Posn)
 			cir.Monsters[monsterInd].Update(room, monsterTarget)
-			room.Target.SetComposeMethod(pixel.ComposeIn)
 			cir.Monsters[monsterInd].Disp(room.Target)
-			room.Target.SetComposeMethod(pixel.ComposeOver)
 		}
 
+		cir.DispShots(room.Target)
+		room.Target.SetComposeMethod(pixel.ComposeOver)
 		room.Disp()
 		room.Target.Draw(win, pixel.IM) //.Moved(win.Bounds().Center()))
 
-		cir.DispShots(win)
+		// cir.DispShots(room.Target)
 
 		illuminate(room, cir, point, win)
 
 		cir.Disp(win)
 		basicTxt.Draw(win, pixel.IM)
-		lightingSprite.Draw(win, pixel.IM)
+
 		win.Update()
 		// time.Sleep(1 / 2 * time.Second)
 	}
