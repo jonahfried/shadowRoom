@@ -181,8 +181,6 @@ func run() {
 	point := imdraw.New(nil)
 	point.Color = colornames.Black
 
-	cir.Monsters = append(cir.Monsters, creature.MakeCreature(0, 0))
-
 	go timer(&cir.Monsters)
 
 	last := time.Now()
@@ -250,7 +248,7 @@ func run() {
 		room.Target.SetComposeMethod(pixel.ComposeIn)
 		for monsterInd := range cir.Monsters {
 			monsterTarget := boundry.AStar(room.GridRepresentation, cir.Monsters[monsterInd].Posn, cir.Posn)
-			cir.Monsters[monsterInd].Update(room, monsterTarget)
+			cir.Monsters[monsterInd].Update(room, monsterTarget, cir.Monsters)
 			cir.Monsters[monsterInd].Disp(room.Target)
 		}
 

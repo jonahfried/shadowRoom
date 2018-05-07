@@ -1,7 +1,6 @@
 package player
 
 import (
-	"fmt"
 	"math"
 	"shadowRoom/boundry"
 	"shadowRoom/creature"
@@ -235,18 +234,7 @@ func (cir *Agent) Light(room *boundry.Place) {
 
 // }
 
-// Update is an agent method. Runs all necessary per-frame proccedures on agent.
-// Takes in a pixelgl.Window from which to accept inputs.
-func (cir *Agent) Update(win *pixelgl.Window, room boundry.Place) {
-	cir.PressHandler(win)
-	cir.ReleaseHandler(win)
-
-	// if vecDist(cir.Vel, pixel.ZV) < .2 {
-	// 	cir.Vel = pixel.ZV
-	// }
-
-	center := cir.Posn
-	radius := 20.0
+func collision(room *boundry.Place, center pixel.Vec, radius float64) (force pixel.Vec) {
 	for _, obst := range room.Blocks {
 
 		for vertexInd := 1; vertexInd < len(obst.Vertices); vertexInd++ {
@@ -272,7 +260,7 @@ func (cir *Agent) Update(win *pixelgl.Window, room boundry.Place) {
 			if magnitude(dist) < (radius + 4) {
 				offset := (dist.Scaled(1 / magnitude(dist))).Scaled((radius + 4) - magnitude(dist))
 				offset = offset.Scaled(.30)
-				cir.Vel = (cir.Vel.Add(offset)).Scaled(.88)
+				force = force.Add((offset).Scaled(.88))
 			}
 		}
 
@@ -298,10 +286,26 @@ func (cir *Agent) Update(win *pixelgl.Window, room boundry.Place) {
 		if magnitude(dist) < (radius + 4) {
 			offset := (dist.Scaled(1 / magnitude(dist))).Scaled((radius + 4) - magnitude(dist))
 			offset = offset.Scaled(.30)
-			cir.Vel = (cir.Vel.Add(offset)).Scaled(.88)
+			force = force.Add((offset).Scaled(.88))
 		}
 
 	}
+	return force
+}
+
+// Update is an agent method. Runs all necessary per-frame proccedures on agent.
+// Takes in a pixelgl.Window from which to accept inputs.
+func (cir *Agent) Update(win *pixelgl.Window, room boundry.Place) {
+	cir.PressHandler(win)
+	cir.ReleaseHandler(win)
+
+	// if vecDist(cir.Vel, pixel.ZV) < .2 {
+	// 	cir.Vel = pixel.ZV
+	// }
+
+	offset := collision(&room, cir.Posn, 20)
+	cir.Vel = cir.Vel.Add(offset)
+
 	cir.Vel = limitVecMag(cir.Vel.Add(limitVecMag(cir.Acc, 1.5)), 10).Scaled(.88)
 
 	cir.Posn = cir.Posn.Add(cir.Vel)
@@ -317,21 +321,34 @@ func (cir *Agent) Update(win *pixelgl.Window, room boundry.Place) {
 	cir.Posn.Y = math.Min(cir.Posn.Y+20, room.Rect.Max.Y) - 20
 
 	// Update Shots
-	for bulletInd := len(cir.Shots) - 1; bulletInd >= 0; bulletInd-- { //range cir.Shots {
+BulletLoop:
+	for bulletInd := 0; bulletInd < len(cir.Shots); bulletInd++ { //range cir.Shots {
 		cir.Shots[bulletInd].Posn1 = cir.Shots[bulletInd].Posn1.Add(cir.Shots[bulletInd].Vel)
 		cir.Shots[bulletInd].Posn2 = cir.Shots[bulletInd].Posn2.Add(cir.Shots[bulletInd].Vel)
 
 		// midPoint := (cir.Shots[bulletInd].Posn1.Add(cir.Shots[bulletInd].Posn2)).Scaled(1 / 2)
 		for monsterInd := range cir.Monsters {
 			if vecDist(cir.Shots[bulletInd].Posn2, cir.Monsters[monsterInd].Posn) < 20 {
-				fmt.Println("shot")
+				// fmt.Println("shot")
 				cir.Monsters[monsterInd].Health--
+				cir.Monsters[monsterInd].Img.Color = colornames.Red
+				// cir.Monsters[monsterInd].Vel = cir.Monsters[monsterInd].Vel.Add((cir.Shots[bulletInd].Vel).Scaled(1))
+				cir.Shots[bulletInd] = cir.Shots[len(cir.Shots)-1]
+				cir.Shots = cir.Shots[:len(cir.Shots)-1]
+				bulletInd--
+				continue BulletLoop
 				// BAD
 				// if len(cir.Shots) > 0 {
 				// 	cir.Shots
 
 				// }
 			}
+		}
+		// Does more checks than necesarry in the case that it does collide.
+		if !(room.Rect.Contains(cir.Shots[bulletInd].Posn2)) || (collision(&room, cir.Shots[bulletInd].Posn2, 1) != pixel.ZV) {
+			cir.Shots[bulletInd] = cir.Shots[len(cir.Shots)-1]
+			cir.Shots = cir.Shots[:len(cir.Shots)-1]
+			bulletInd--
 		}
 	}
 	filter(&cir.Monsters)

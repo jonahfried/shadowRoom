@@ -26,7 +26,7 @@ func MakeCreature(x, y float64) (monster Creature) {
 	monster.Posn = pixel.V(x, y)
 	monster.Vel = pixel.V(0, 0)
 
-	monster.Health = 10
+	monster.Health = 5
 	monster.Img = imdraw.New(nil)
 	monster.Img.Color = colornames.Darkolivegreen
 
@@ -53,7 +53,7 @@ func magnitude(vec pixel.Vec) float64 {
 
 // Update is a method for a creature, taking in a room
 // returning nothing, it alters the position and velocity of the creature
-func (monster *Creature) Update(room boundry.Place, target pixel.Vec) {
+func (monster *Creature) Update(room boundry.Place, target pixel.Vec, monsters []Creature) {
 	acc := target.Sub(monster.Posn) //limitVecMag(target.Sub(monster.Posn), vecDist(monster.Posn, target)/10)
 
 	acc = acc.Sub(monster.Vel)
@@ -120,6 +120,14 @@ func (monster *Creature) Update(room boundry.Place, target pixel.Vec) {
 
 	}
 
+	// for blobInd := range monsters {
+	// 	dist := monsters[blobInd].Posn.Sub(monster.Posn)
+	// 	if magnitude(dist) < 40 && magnitude(dist) > 0 {
+	// 		monster.Vel = monster.Vel.Sub(dist.Scaled(.09))
+	// 		monsters[blobInd].Vel = monsters[blobInd].Vel.Add(dist.Scaled(.09))
+	// 	}
+	// }
+
 	monster.Posn = monster.Posn.Add(monster.Vel)
 
 	// monster.Posn = monster.Posn.Add(monster.Vel)
@@ -147,4 +155,5 @@ func (monster *Creature) Disp(win *pixelgl.Canvas) {
 	monster.Img.Push(monster.Posn)
 	monster.Img.Circle(20, 0)
 	monster.Img.Draw(win)
+	monster.Img.Color = colornames.Darkolivegreen
 }

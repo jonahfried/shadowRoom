@@ -263,7 +263,7 @@ func makeGrid(room *Place) (grid Grid) {
 
 // ToGrid is a method for a Place, returning a rough tile-based
 // representation of where in the room is enterable.
-func (room *Place) ToGrid(grain int) {
+func (room *Place) ToGrid(grain int, monsters []pixel.Vec) {
 	var grid Grid
 	tilesPerRow := float64(grain)
 	grid = makeGrid(room)
@@ -289,7 +289,20 @@ func (room *Place) ToGrid(grain int) {
 				// 	}
 				// }
 			}
+		MonsterEval:
+			for _, blob := range monsters {
+				if vecDist(blob, rec.Center()) < 20 {
+					tl.Enterable = false
+					break MonsterEval
+				}
 
+				// for _, vertex := range obst.Vertices {
+				// 	if rec.Contains(vertex) {
+				// 		tl.Enterable = false
+				// 		break VertexEval
+				// 	}
+				// }
+			}
 			// if (start.X >= i && start.Y >= j) && (start.X < (i+room.Rect.W()/tilesPerRow) && start.Y < (j+room.Rect.H()/tilesPerRow)) {
 			// 	grid.StartIndex = (yInd * grain) + xInd
 			// }
