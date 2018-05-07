@@ -7,9 +7,6 @@ import (
 	"math"
 	"math/rand"
 	"os"
-	"shadowRoom/boundry"
-	"shadowRoom/creature"
-	"shadowRoom/player"
 	"sort"
 	"time"
 
@@ -22,11 +19,7 @@ import (
 	"github.com/faiface/pixel/text"
 )
 
-func vecDist(v1, v2 pixel.Vec) float64 {
-	return math.Sqrt(math.Pow(v1.X-v2.X, 2) + math.Pow(v1.Y-v2.Y, 2))
-}
-
-func illuminate(room boundry.Place, cir player.Agent, point *imdraw.IMDraw, win *pixelgl.Window) {
+func illuminate(room Place, cir Agent, point *imdraw.IMDraw, win *pixelgl.Window) {
 	point.Clear()
 	anglesToCheck := make([]float64, 0, 10)
 	for _, block := range room.Blocks {
@@ -43,7 +36,7 @@ func illuminate(room boundry.Place, cir player.Agent, point *imdraw.IMDraw, win 
 		shadedVertices := make([]pixel.Vec, 0)
 		for _, vertex := range room.Vertices {
 			theta := math.Atan2((vertex.Y - cir.Posn.Y), (vertex.X - cir.Posn.X))
-			landed := boundry.Obstruct(cir.Posn, theta, room, block)
+			landed := Obstruct(cir.Posn, theta, room, block)
 			if math.Abs(vecDist(landed, cir.Posn)-vecDist(vertex, cir.Posn)) > 1 {
 				// point.Push(vertex)
 				shadedVertices = append(shadedVertices, vertex)
@@ -55,7 +48,7 @@ func illuminate(room boundry.Place, cir player.Agent, point *imdraw.IMDraw, win 
 		shapePoints := make([]pixel.Vec, 0)
 		sort.Float64s(anglesToCheck)
 		for _, angle := range anglesToCheck {
-			vec := boundry.Obstruct(cir.Posn, angle, room, block)
+			vec := Obstruct(cir.Posn, angle, room, block)
 			shapePoints = append(shapePoints, vec)
 			point.Push(vec)
 			if !cir.Shade {
@@ -124,10 +117,10 @@ func illuminate(room boundry.Place, cir player.Agent, point *imdraw.IMDraw, win 
 	}
 }
 
-func timer(monsters *[]creature.Creature) {
+func timer(monsters *[]Creature) {
 	tick := time.Tick(time.Second * 5)
 	for {
-		*monsters = append(*monsters, creature.MakeCreature(0, 0))
+		*monsters = append(*monsters, MakeCreature(0, 0))
 		<-tick
 	}
 }
@@ -169,13 +162,13 @@ func run() {
 	// rooms := make(map[pixel.Vec]struct{ bottemLeft, topRight float64 })
 
 	// setting up the Player
-	var cir = player.MakeAgent(0, 0, win, lightingSprite)
+	var cir = MakeAgent(0, 0, win, lightingSprite)
 
 	// setting up the camera
 	// cam := player.MakeCamera(cir.Posn, win)
 
 	// TODO: Make room bounds relative to Bounds
-	room := boundry.MakePlace(pixel.R(-700, -600, 700, 600), 11)
+	room := MakePlace(pixel.R(-700, -600, 700, 600), 11)
 	room.ToGrid(40)
 
 	point := imdraw.New(nil)
@@ -247,7 +240,7 @@ func run() {
 
 		room.Target.SetComposeMethod(pixel.ComposeIn)
 		for monsterInd := range cir.Monsters {
-			monsterTarget := boundry.AStar(room.GridRepresentation, cir.Monsters[monsterInd].Posn, cir.Posn)
+			monsterTarget := AStar(room.GridRepresentation, cir.Monsters[monsterInd].Posn, cir.Posn)
 			cir.Monsters[monsterInd].Update(room, monsterTarget, cir.Monsters)
 			cir.Monsters[monsterInd].Disp(room.Target)
 		}

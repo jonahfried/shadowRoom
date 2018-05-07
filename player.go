@@ -1,9 +1,7 @@
-package player
+package main
 
 import (
 	"math"
-	"shadowRoom/boundry"
-	"shadowRoom/creature"
 
 	"github.com/faiface/pixel"
 	"github.com/faiface/pixel/imdraw"
@@ -25,7 +23,7 @@ type Agent struct {
 
 	Cam Camera
 
-	Monsters []creature.Creature
+	Monsters []Creature
 	Shots    []Shot
 	ShotsImg *imdraw.IMDraw
 
@@ -49,7 +47,7 @@ func MakeAgent(x, y float64, win *pixelgl.Window, sprite *pixel.Sprite) (cir Age
 	cir.Spacing = 6
 	cir.Count = 88
 
-	cir.Monsters = make([]creature.Creature, 0)
+	cir.Monsters = make([]Creature, 0)
 	cir.Shots = make([]Shot, 0)
 	cir.ShotsImg = imdraw.New(nil)
 	cir.ShotsImg.Color = pixel.ToRGBA(colornames.Firebrick).Mul(pixel.Alpha(.7))
@@ -88,16 +86,6 @@ func (cir *Agent) DispShots(win *pixelgl.Canvas) {
 		cir.ShotsImg.Line(4)
 	}
 	cir.ShotsImg.Draw(win)
-}
-
-// Vector limitation. Takes in a pixel.Vec and a float64.
-// If the magnitude of the given vector is greater than the limit,
-// Then the magnitude is scaled down to the limit.
-func limitVecMag(v pixel.Vec, lim float64) pixel.Vec {
-	if v.Len() != 0 && v.Len() > lim {
-		v = v.Scaled(lim / v.Len())
-	}
-	return v
 }
 
 // PressHandler Handles key presses.
@@ -183,10 +171,6 @@ func (cir *Agent) Disp(win *pixelgl.Window) {
 	cir.Img.Draw(win)
 }
 
-func magnitude(vec pixel.Vec) float64 {
-	return vecDist(pixel.ZV, vec)
-}
-
 // Light adds fading light (white circles) around an Agent's posn
 // func (cir *Agent) Light(room *boundry.Place) {
 // 	room.Target.SetComposeMethod(pixel.ComposePlus)
@@ -196,7 +180,7 @@ func magnitude(vec pixel.Vec) float64 {
 // }
 
 // Light adds fading light (white circles) around an Agent's posn
-func (cir *Agent) Light(room *boundry.Place) {
+func (cir *Agent) Light(room *Place) {
 	img := imdraw.New(nil)
 	img.Precision = 32
 	col := (pixel.ToRGBA(colornames.Whitesmoke)).Mul(pixel.Alpha(cir.Level))
@@ -234,7 +218,7 @@ func (cir *Agent) Light(room *boundry.Place) {
 
 // }
 
-func collision(room *boundry.Place, center pixel.Vec, radius float64) (force pixel.Vec) {
+func collision(room *Place, center pixel.Vec, radius float64) (force pixel.Vec) {
 	for _, obst := range room.Blocks {
 
 		for vertexInd := 1; vertexInd < len(obst.Vertices); vertexInd++ {
@@ -295,7 +279,7 @@ func collision(room *boundry.Place, center pixel.Vec, radius float64) (force pix
 
 // Update is an agent method. Runs all necessary per-frame proccedures on agent.
 // Takes in a pixelgl.Window from which to accept inputs.
-func (cir *Agent) Update(win *pixelgl.Window, room boundry.Place) {
+func (cir *Agent) Update(win *pixelgl.Window, room Place) {
 	cir.PressHandler(win)
 	cir.ReleaseHandler(win)
 
@@ -373,17 +357,13 @@ BulletLoop:
 // }
 // cir.Monsters = filter(cir.Monsters)
 
-func filter(monsters *[]creature.Creature) {
+func filter(monsters *[]Creature) {
 	for monsterInd := 0; monsterInd < len(*monsters); monsterInd++ {
 		if (*monsters)[monsterInd].Health <= 0 {
 			(*monsters)[monsterInd] = (*monsters)[len(*monsters)-1]
 			(*monsters) = (*monsters)[:len(*monsters)-1]
 		}
 	}
-}
-
-func vecDist(v1, v2 pixel.Vec) float64 {
-	return math.Sqrt(math.Pow(v1.X-v2.X, 2) + math.Pow(v1.Y-v2.Y, 2))
 }
 
 // Camera is a struct storing a Matrix to set the window

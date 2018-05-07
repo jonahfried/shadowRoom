@@ -1,8 +1,6 @@
-package priorityqueue
+package main
 
-import (
-	"container/heap"
-)
+import "container/heap"
 
 // PriorityQueue is a datastructure that can be pushed to to store elems
 // and Popped from to receive the lowest stored element.

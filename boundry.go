@@ -1,11 +1,10 @@
-package boundry
+package main
 
 import (
 	"container/heap"
 	"fmt"
 	"math"
 	"math/rand"
-	priorityqueue "shadowRoom/priorityQueue"
 
 	"github.com/faiface/pixel"
 	"github.com/faiface/pixel/imdraw"
@@ -263,7 +262,7 @@ func makeGrid(room *Place) (grid Grid) {
 
 // ToGrid is a method for a Place, returning a rough tile-based
 // representation of where in the room is enterable.
-func (room *Place) ToGrid(grain int, monsters []pixel.Vec) {
+func (room *Place) ToGrid(grain int) {
 	var grid Grid
 	tilesPerRow := float64(grain)
 	grid = makeGrid(room)
@@ -280,20 +279,6 @@ func (room *Place) ToGrid(grain int, monsters []pixel.Vec) {
 				if vecDist(obst.Center, rec.Center()) < obst.Radius+4 {
 					tl.Enterable = false
 					break VertexEval
-				}
-
-				// for _, vertex := range obst.Vertices {
-				// 	if rec.Contains(vertex) {
-				// 		tl.Enterable = false
-				// 		break VertexEval
-				// 	}
-				// }
-			}
-		MonsterEval:
-			for _, blob := range monsters {
-				if vecDist(blob, rec.Center()) < 20 {
-					tl.Enterable = false
-					break MonsterEval
 				}
 
 				// for _, vertex := range obst.Vertices {
@@ -377,10 +362,10 @@ func AStar(grid Grid, startPosn, goal pixel.Vec) pixel.Vec {
 	goalYInd := int(math.Ceil(shiftedGoal.Y / float64(grid.TilesPerRow)))
 	goalIndex := (goalYInd * grid.TilesPerRow) + goalXInd
 
-	prior := make(priorityqueue.PriorityQueue, 0)
+	prior := make(PriorityQueue, 0)
 	heap.Init(&prior)
 
-	start := &priorityqueue.Elem{
+	start := &Elem{
 		Value:    startIndex,
 		Priority: grid.GridMap[startIndex].fScore,
 	}
@@ -422,7 +407,7 @@ func AStar(grid Grid, startPosn, goal pixel.Vec) pixel.Vec {
 					grid.GridMap[neighbor].gScore = possibleGScore
 					grid.GridMap[neighbor].fScore = possibleGScore + grid.tileDist(neighbor, goalIndex)
 
-					item := &priorityqueue.Elem{
+					item := &Elem{
 						Value:    neighbor,
 						Priority: grid.GridMap[neighbor].fScore,
 						// Index:    0,

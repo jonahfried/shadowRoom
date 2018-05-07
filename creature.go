@@ -1,9 +1,6 @@
-package creature
+package main
 
 import (
-	"math"
-	"shadowRoom/boundry"
-
 	"github.com/faiface/pixel"
 	"github.com/faiface/pixel/imdraw"
 	"github.com/faiface/pixel/pixelgl"
@@ -43,17 +40,13 @@ func limitVecMag(v pixel.Vec, lim float64) pixel.Vec {
 	return v
 }
 
-func vecDist(v1, v2 pixel.Vec) float64 {
-	return math.Sqrt(math.Pow(v1.X-v2.X, 2) + math.Pow(v1.Y-v2.Y, 2))
-}
-
 func magnitude(vec pixel.Vec) float64 {
 	return vecDist(pixel.ZV, vec)
 }
 
 // Update is a method for a creature, taking in a room
 // returning nothing, it alters the position and velocity of the creature
-func (monster *Creature) Update(room boundry.Place, target pixel.Vec, monsters []Creature) {
+func (monster *Creature) Update(room Place, target pixel.Vec, monsters []Creature) {
 	acc := target.Sub(monster.Posn) //limitVecMag(target.Sub(monster.Posn), vecDist(monster.Posn, target)/10)
 
 	acc = acc.Sub(monster.Vel)
