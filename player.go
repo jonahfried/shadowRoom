@@ -2,12 +2,16 @@ package main
 
 import (
 	"math"
+	"math/rand"
 
 	"github.com/faiface/pixel"
 	"github.com/faiface/pixel/imdraw"
 	"github.com/faiface/pixel/pixelgl"
 	"golang.org/x/image/colornames"
 )
+
+const bullet = 1
+const shot = 2
 
 // Agent keeps a posn, vel, acc, and a *pixel.IMDraw.
 // Used to keep all information for the movable image together.
@@ -26,6 +30,7 @@ type Agent struct {
 	Monsters []Creature
 	Shots    []Shot
 	ShotsImg *imdraw.IMDraw
+	GunType  int
 
 	Fade   pixel.Picture
 	Sprite *pixel.Sprite
@@ -50,7 +55,7 @@ func MakeAgent(x, y float64, win *pixelgl.Window, sprite *pixel.Sprite) (cir Age
 	cir.Monsters = make([]Creature, 0)
 	cir.Shots = make([]Shot, 0)
 	cir.ShotsImg = imdraw.New(nil)
-	cir.ShotsImg.Color = pixel.ToRGBA(colornames.Firebrick).Mul(pixel.Alpha(.7))
+	cir.GunType = 2
 
 	cir.Fade = sprite.Picture()
 	cir.Sprite = sprite
@@ -65,22 +70,49 @@ func MakeAgent(x, y float64, win *pixelgl.Window, sprite *pixel.Sprite) (cir Age
 // A Shot keeps track of the players attacks
 type Shot struct {
 	Posn1, Posn2, Vel pixel.Vec
+	GunType           int
+	color             pixel.RGBA
 }
 
-func (cir Agent) fire(win *pixelgl.Window) (bullet Shot) {
+func (cir *Agent) fire(win *pixelgl.Window) {
 	mousePosn := cir.Cam.Matrix.Unproject(win.MousePosition())
 	directionVec := mousePosn.Sub(cir.Posn)
 	directionVec = directionVec.Scaled(1 / magnitude(directionVec))
-	bullet.Posn1 = cir.Posn
-	bullet.Posn2 = cir.Posn.Add(directionVec.Scaled(10))
-	bullet.Vel = directionVec.Scaled(14)
-	return bullet
+
+	switch cir.GunType {
+	case 1:
+		var bullet Shot
+		bullet.GunType = 1
+		bullet.color = pixel.ToRGBA(colornames.Firebrick).Mul(pixel.Alpha(.7))
+		bullet.Posn1 = cir.Posn
+		bullet.Posn2 = cir.Posn.Add(directionVec.Scaled(10))
+		bullet.Vel = directionVec.Scaled(14)
+		cir.Shots = append(cir.Shots, bullet)
+	case 2:
+		angle := math.Atan2(mousePosn.Y-cir.Posn.Y, mousePosn.X-cir.Posn.X)
+		for shotCount := 0; shotCount < 5; shotCount++ {
+			var bullet Shot
+			bullet.GunType = 2
+			bullet.color = pixel.ToRGBA(colornames.Firebrick).Mul(pixel.Alpha(.7))
+			// offset := pixel.V(rand.Float64()*20, rand.Float64()*20)
+			offset := (rand.Float64() - rand.Float64()) / 2
+			// newDirection := directionVec.Add(offset)
+			newAngle := angle + offset
+			// newDirection = newDirection.Scaled(1 / magnitude(newDirection))
+			bullet.Posn1 = cir.Posn
+			newDirection := pixel.V(math.Cos(newAngle), math.Sin(newAngle))
+			bullet.Posn2 = cir.Posn.Add(newDirection.Scaled(10))
+			bullet.Vel = (bullet.Posn2.Sub(bullet.Posn1)).Scaled(2)
+			cir.Shots = append(cir.Shots, bullet)
+		}
+	}
 }
 
 // DispShots displays shots
 func (cir *Agent) DispShots(win *pixelgl.Canvas) {
 	cir.ShotsImg.Clear()
 	for _, bullet := range cir.Shots {
+		cir.ShotsImg.Color = bullet.color
 		cir.ShotsImg.Push(bullet.Posn1)
 		cir.ShotsImg.Push(bullet.Posn2)
 		cir.ShotsImg.Line(4)
@@ -142,7 +174,7 @@ func (cir *Agent) PressHandler(win *pixelgl.Window) {
 	}
 
 	if win.JustPressed(pixelgl.MouseButton1) {
-		cir.Shots = append(cir.Shots, cir.fire(win))
+		cir.fire(win)
 	}
 }
 
@@ -310,6 +342,11 @@ BulletLoop:
 		cir.Shots[bulletInd].Posn1 = cir.Shots[bulletInd].Posn1.Add(cir.Shots[bulletInd].Vel)
 		cir.Shots[bulletInd].Posn2 = cir.Shots[bulletInd].Posn2.Add(cir.Shots[bulletInd].Vel)
 
+		if cir.Shots[bulletInd].GunType == 2 {
+			cir.Shots[bulletInd].Vel = cir.Shots[bulletInd].Vel.Scaled(.94)
+			cir.Shots[bulletInd].color = (cir.Shots[bulletInd].color).Add(pixel.ToRGBA(colornames.Darkorange).Mul(pixel.Alpha(.03))).Add(pixel.Alpha(.02)) //  Mul(pixel.Alpha(1))
+		}
+
 		// midPoint := (cir.Shots[bulletInd].Posn1.Add(cir.Shots[bulletInd].Posn2)).Scaled(1 / 2)
 		for monsterInd := range cir.Monsters {
 			if vecDist(cir.Shots[bulletInd].Posn2, cir.Monsters[monsterInd].Posn) < 20 {
@@ -333,6 +370,13 @@ BulletLoop:
 			cir.Shots[bulletInd] = cir.Shots[len(cir.Shots)-1]
 			cir.Shots = cir.Shots[:len(cir.Shots)-1]
 			bulletInd--
+			continue BulletLoop
+		}
+		if magnitude(cir.Shots[bulletInd].Vel) < 2 {
+			cir.Shots[bulletInd] = cir.Shots[len(cir.Shots)-1]
+			cir.Shots = cir.Shots[:len(cir.Shots)-1]
+			bulletInd--
+			continue BulletLoop
 		}
 	}
 	filter(&cir.Monsters)

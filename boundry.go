@@ -2,7 +2,6 @@ package main
 
 import (
 	"container/heap"
-	"fmt"
 	"math"
 	"math/rand"
 
@@ -252,6 +251,7 @@ type Grid struct {
 	GridMap     []Tile
 	Room        *Place
 	TilesPerRow int
+	TileSize    pixel.Vec
 }
 
 func makeGrid(room *Place) (grid Grid) {
@@ -267,11 +267,12 @@ func (room *Place) ToGrid(grain int) {
 	tilesPerRow := float64(grain)
 	grid = makeGrid(room)
 	grid.TilesPerRow = grain
+	grid.TileSize = pixel.V(room.Rect.W()/tilesPerRow, room.Rect.H()/tilesPerRow)
 
 	xInd := 0
 	yInd := 0
-	for j := room.Rect.Min.Y; j < room.Rect.Max.Y; j += room.Rect.H() / tilesPerRow {
-		for i := room.Rect.Min.X; i < room.Rect.Max.X; i += room.Rect.W() / tilesPerRow {
+	for j := room.Rect.Min.Y; j < room.Rect.Max.Y; j += grid.TileSize.Y {
+		for i := room.Rect.Min.X; i < room.Rect.Max.X; i += grid.TileSize.X {
 			rec := pixel.R(i, j, i+(room.Rect.W()/tilesPerRow), j+(room.Rect.H()/tilesPerRow))
 			tl := makeTile(rec, xInd, yInd)
 		VertexEval:
@@ -294,7 +295,6 @@ func (room *Place) ToGrid(grain int) {
 			// if (goal.X >= i && goal.Y >= j) && (goal.X < (i+room.Rect.W()/tilesPerRow) && goal.Y < (j+room.Rect.H()/tilesPerRow)) {
 			// 	grid.GoalIndex = (yInd * grain) + xInd
 			// }
-
 			grid.GridMap = append(grid.GridMap, tl)
 			xInd++
 		}
@@ -318,18 +318,11 @@ func (room *Place) ToGrid(grain int) {
 	room.GridRepresentation = grid
 }
 
-func (grid *Grid) traceBack(traceInd int, goal pixel.Vec) pixel.Vec {
-	// img := imdraw.New(nil)
-	// img.Color = colornames.Fuchsia
-	for grid.GridMap[traceInd].foundFrom != -1 {
-		// img.Push(grid.GridMap[traceInd].Rect.Min)
-		// img.Push(grid.GridMap[traceInd].Rect.Max)
-		// img.Rectangle(0)
-		// img.Draw(grid.Room.Target)
-
-		next := grid.GridMap[traceInd].foundFrom
-		if grid.GridMap[next].foundFrom == -1 {
-			return grid.GridMap[traceInd].Rect.Center()
+func traceBack(gridMap *[]Tile, traceInd int, goal pixel.Vec) pixel.Vec {
+	for (*gridMap)[traceInd].foundFrom != -1 {
+		next := (*gridMap)[traceInd].foundFrom
+		if (*gridMap)[next].foundFrom == -1 {
+			return (*gridMap)[traceInd].Rect.Center()
 		}
 		traceInd = next
 	}
@@ -345,39 +338,55 @@ func (grid *Grid) tileDist(ind1, ind2 int) float64 {
 }
 
 // AStar uses a* pathfinding to go between grid's start and goal posns
-func AStar(grid Grid, startPosn, goal pixel.Vec) pixel.Vec {
+func AStar(grid Grid, startPosn, goal pixel.Vec, cir *Agent) pixel.Vec {
+
+	tileGrid := make([]Tile, len(grid.GridMap))
+	copy(tileGrid, grid.GridMap)
 
 	min := grid.Room.Rect.Min
 
 	shiftedStart := startPosn.Sub(min)
-	shiftedGoal := startPosn.Sub(min)
+	shiftedGoal := goal.Sub(min)
 
-	startXInd := int(math.Ceil(shiftedStart.X / float64(grid.TilesPerRow)))
-	startYInd := int(math.Ceil(shiftedStart.Y / float64(grid.TilesPerRow)))
+	startXInd := int(math.Floor(shiftedStart.X / grid.TileSize.X))
+	startYInd := int(math.Floor(shiftedStart.Y / grid.TileSize.Y))
 	startIndex := (startYInd * grid.TilesPerRow) + startXInd
+	tileGrid[startIndex].gScore = 0
+	tileGrid[startIndex].fScore = 0
 
 	// fmt.Println(min, startPosn, shiftedStart, startIndex, "\n")
 
-	goalXInd := int(math.Ceil(shiftedGoal.X / float64(grid.TilesPerRow)))
-	goalYInd := int(math.Ceil(shiftedGoal.Y / float64(grid.TilesPerRow)))
+	goalXInd := int(math.Floor(shiftedGoal.X / grid.TileSize.X))
+	goalYInd := int(math.Floor(shiftedGoal.Y / grid.TileSize.Y))
 	goalIndex := (goalYInd * grid.TilesPerRow) + goalXInd
+
+	for _, blob := range cir.Monsters {
+		if blob.Posn != startPosn {
+			shiftedBlob := blob.Posn.Sub(min)
+			blobXInd := int(math.Ceil(shiftedBlob.X / float64(grid.TilesPerRow)))
+			blobYInd := int(math.Ceil(shiftedBlob.Y / float64(grid.TilesPerRow)))
+			blobIndex := (blobYInd * grid.TilesPerRow) + blobXInd
+
+			tileGrid[blobIndex].Enterable = false
+		}
+	}
 
 	prior := make(PriorityQueue, 0)
 	heap.Init(&prior)
 
 	start := &Elem{
 		Value:    startIndex,
-		Priority: grid.GridMap[startIndex].fScore,
+		Priority: tileGrid[startIndex].fScore,
 	}
 	heap.Push(&prior, start)
 
 	for prior.Len() > 0 {
 		currentInd := heap.Pop(&prior).(int)
 		if currentInd == goalIndex {
-			return grid.traceBack(currentInd, goal)
+			return traceBack(&tileGrid, currentInd, goal)
 		}
 
-		grid.GridMap[currentInd].reviewed = true
+		tileGrid[currentInd].reviewed = true
 
 		neighbors := make([]int, 0, 8)
 		for xOffset := -1; xOffset <= 1; xOffset++ {
@@ -388,7 +397,7 @@ func AStar(grid Grid, startPosn, goal pixel.Vec) pixel.Vec {
 					neighbor := (currentInd + (yOffset * grid.TilesPerRow) + xOffset)
 					if neighbor >= 0 && neighbor < len(grid.GridMap) {
 
-						if grid.GridMap[neighbor].Enterable {
+						if tileGrid[neighbor].Enterable {
 							neighbors = append(neighbors, neighbor)
 						}
 
@@ -399,17 +408,22 @@ func AStar(grid Grid, startPosn, goal pixel.Vec) pixel.Vec {
 			}
 		}
 
+		// fmt.Println("neighbor length:", len(neighbors))
+
 		for _, neighbor := range neighbors {
-			if !grid.GridMap[neighbor].reviewed {
-				possibleGScore := grid.GridMap[currentInd].gScore + grid.tileDist(currentInd, neighbor)
-				if possibleGScore < grid.GridMap[neighbor].gScore {
-					grid.GridMap[neighbor].foundFrom = currentInd
-					grid.GridMap[neighbor].gScore = possibleGScore
-					grid.GridMap[neighbor].fScore = possibleGScore + grid.tileDist(neighbor, goalIndex)
+			// fmt.Print("checking neighbor: ")
+			if !tileGrid[neighbor].reviewed {
+				// fmt.Print("not reviewed: ")
+				possibleGScore := tileGrid[currentInd].gScore + grid.tileDist(currentInd, neighbor)
+				if possibleGScore < tileGrid[neighbor].gScore {
+					// fmt.Print("changing foundfrom")
+					tileGrid[neighbor].foundFrom = currentInd
+					tileGrid[neighbor].gScore = possibleGScore
+					tileGrid[neighbor].fScore = possibleGScore + grid.tileDist(neighbor, goalIndex)
 
 					item := &Elem{
 						Value:    neighbor,
-						Priority: grid.GridMap[neighbor].fScore,
+						Priority: tileGrid[neighbor].fScore,
 						// Index:    0,
 					}
 					heap.Push(&prior, item)
@@ -418,6 +432,6 @@ func AStar(grid Grid, startPosn, goal pixel.Vec) pixel.Vec {
 		}
 
 	}
-	fmt.Println("Didn't Find Goal")
+	// fmt.Println("Didn't Find Goal")
 	return startPosn
 }

@@ -198,7 +198,7 @@ func run() {
 
 		fmt.Fprintln(basicTxt, "fps:", math.Round(frames/seconds))
 
-		fmt.Println(1 / dt)
+		// fmt.Println(1 / dt)
 
 		win.Clear(colornames.Black)
 		room.Disp()
@@ -209,6 +209,8 @@ func run() {
 		cir.Cam.Matrix = pixel.IM.Moved(win.Bounds().Center().Sub(cir.Cam.Posn))
 
 		win.SetMatrix(cir.Cam.Matrix)
+
+		//Move this out of loop?
 		room.Target.SetMatrix(pixel.IM.Moved(room.Target.Bounds().Center()))
 
 		// TESTING PRIORITY QUEUE
@@ -231,16 +233,12 @@ func run() {
 		*/
 
 		room.Target.Clear(pixel.Alpha(0))
-		// room.Disp()
+		room.Disp()
 		cir.Light(&room)
-
-		// if rand.Float64() > .992 {
-		// 	cir.Monsters = append(cir.Monsters, creature.MakeCreature(0, 0))
-		// }
 
 		room.Target.SetComposeMethod(pixel.ComposeIn)
 		for monsterInd := range cir.Monsters {
-			monsterTarget := AStar(room.GridRepresentation, cir.Monsters[monsterInd].Posn, cir.Posn)
+			monsterTarget := AStar(room.GridRepresentation, cir.Monsters[monsterInd].Posn, cir.Posn, &cir)
 			cir.Monsters[monsterInd].Update(room, monsterTarget, cir.Monsters)
 			cir.Monsters[monsterInd].Disp(room.Target)
 		}
@@ -250,7 +248,7 @@ func run() {
 		room.Disp()
 		room.Target.Draw(win, pixel.IM) //.Moved(win.Bounds().Center()))
 
-		// cir.DispShots(room.Target)
+		cir.DispShots(room.Target)
 
 		illuminate(room, cir, point, win)
 
