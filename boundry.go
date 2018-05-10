@@ -19,9 +19,18 @@ type Place struct {
 	Blocks             []Obsticle
 	Vertices           []pixel.Vec
 	GridRepresentation Grid
+	Booster            Boost
 
 	Img    *imdraw.IMDraw
 	Target *pixelgl.Canvas
+}
+
+// Boost to give bonus to the player
+type Boost struct {
+	Posn    pixel.Vec
+	Present bool
+
+	Img *imdraw.IMDraw
 }
 
 // MakePlace turns specifications of a place, (rectangle and the Obsticles it contains)
@@ -53,17 +62,33 @@ func MakePlace(rect pixel.Rect, numBlocks int, blocks ...Obsticle) (room Place) 
 		room.Blocks = blocks
 	}
 
+	room.Booster.Present = true
+	room.Booster.Posn = pixel.V(100, 100)
+	room.Booster.Img = imdraw.New(nil)
+	room.Booster.Img.Color = colornames.Blue
+	// room.Booster.Img.Precision = 32
+
 	room.Target = pixelgl.NewCanvas(rect)
 	room.Img = imdraw.New(nil)
 	return room
+}
+
+func (room *Place) presentBoost() {
+	if !room.Booster.Present {
+		room.Booster.Posn = pixel.V(room.Rect.Center().X+(room.Rect.W()/2*(rand.Float64()-rand.Float64())/2), room.Rect.Center().Y+room.Rect.H()*(rand.Float64()-rand.Float64())/2)
+		room.Booster.Present = true
+	} else {
+		room.Booster.Present = false
+	}
 }
 
 // Disp updates and displays a room's Img
 func (room *Place) Disp() {
 	// room.Target.Clear(pixel.Alpha(0))
 	// room.Target.Clear(colornames.Green)
+	room.Target.SetComposeMethod(pixel.ComposeIn)
 	room.Img.Clear()
-	room.Img.Color = colornames.Black
+	room.Img.Color = colornames.Burlywood
 	room.Img.Push(room.Rect.Center().Sub(room.Rect.Size().Scaled(.5)))
 	room.Img.Push(room.Rect.Center().Add(room.Rect.Size().Scaled(.5)))
 	room.Img.Rectangle(3)
@@ -71,12 +96,19 @@ func (room *Place) Disp() {
 
 	// bcImg := imdraw.New(nil)
 	// bcImg.Color = colornames.Black
-	room.Target.SetComposeMethod(pixel.ComposeIn)
 	for _, bc := range room.Blocks {
 		bc.Img.Draw(room.Target)
 		// bcImg.Push(bc.Center)
 		// bcImg.Circle(bc.Radius, 0)
 	}
+
+	if room.Booster.Present {
+		room.Booster.Img.Clear()
+		room.Booster.Img.Push(room.Booster.Posn)
+		room.Booster.Img.Circle(60, 0)
+		room.Booster.Img.Draw(room.Target)
+	}
+
 	room.Target.SetComposeMethod(pixel.ComposeOver)
 	// bcImg.Draw(room.Target)
 }

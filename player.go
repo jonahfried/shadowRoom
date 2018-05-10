@@ -10,9 +10,6 @@ import (
 	"golang.org/x/image/colornames"
 )
 
-const bullet = 1
-const shot = 2
-
 // Agent keeps a posn, vel, acc, and a *pixel.IMDraw.
 // Used to keep all information for the movable image together.
 type Agent struct {
@@ -31,6 +28,7 @@ type Agent struct {
 	Shots    []Shot
 	ShotsImg *imdraw.IMDraw
 	GunType  int
+	Bullets  int
 
 	Fade   pixel.Picture
 	Sprite *pixel.Sprite
@@ -55,7 +53,8 @@ func MakeAgent(x, y float64, win *pixelgl.Window, sprite *pixel.Sprite) (cir Age
 	cir.Monsters = make([]Creature, 0)
 	cir.Shots = make([]Shot, 0)
 	cir.ShotsImg = imdraw.New(nil)
-	cir.GunType = 2
+	cir.GunType = 1
+	cir.Bullets = 0
 
 	cir.Fade = sprite.Picture()
 	cir.Sprite = sprite
@@ -95,15 +94,19 @@ func (cir *Agent) fire(win *pixelgl.Window) {
 			bullet.GunType = 2
 			bullet.color = pixel.ToRGBA(colornames.Firebrick).Mul(pixel.Alpha(.7))
 			// offset := pixel.V(rand.Float64()*20, rand.Float64()*20)
-			offset := (rand.Float64() - rand.Float64()) / 2
+			offset := (rand.Float64() - rand.Float64()) / 2.3
 			// newDirection := directionVec.Add(offset)
 			newAngle := angle + offset
 			// newDirection = newDirection.Scaled(1 / magnitude(newDirection))
 			bullet.Posn1 = cir.Posn
 			newDirection := pixel.V(math.Cos(newAngle), math.Sin(newAngle))
 			bullet.Posn2 = cir.Posn.Add(newDirection.Scaled(10))
-			bullet.Vel = (bullet.Posn2.Sub(bullet.Posn1)).Scaled(2)
+			bullet.Vel = (bullet.Posn2.Sub(bullet.Posn1)).Scaled(2 + (rand.Float64()-rand.Float64())/2.3)
 			cir.Shots = append(cir.Shots, bullet)
+		}
+		cir.Bullets--
+		if cir.Bullets <= 0 {
+			cir.GunType = 1
 		}
 	}
 }
@@ -311,7 +314,7 @@ func collision(room *Place, center pixel.Vec, radius float64) (force pixel.Vec) 
 
 // Update is an agent method. Runs all necessary per-frame proccedures on agent.
 // Takes in a pixelgl.Window from which to accept inputs.
-func (cir *Agent) Update(win *pixelgl.Window, room Place) {
+func (cir *Agent) Update(win *pixelgl.Window, room *Place) {
 	cir.PressHandler(win)
 	cir.ReleaseHandler(win)
 
@@ -319,7 +322,7 @@ func (cir *Agent) Update(win *pixelgl.Window, room Place) {
 	// 	cir.Vel = pixel.ZV
 	// }
 
-	offset := collision(&room, cir.Posn, 20)
+	offset := collision(room, cir.Posn, 20)
 	cir.Vel = cir.Vel.Add(offset)
 
 	cir.Vel = limitVecMag(cir.Vel.Add(limitVecMag(cir.Acc, 1.5)), 10).Scaled(.88)
@@ -335,6 +338,12 @@ func (cir *Agent) Update(win *pixelgl.Window, room Place) {
 
 	cir.Posn.Y = math.Max(cir.Posn.Y-20, room.Rect.Min.Y) + 20
 	cir.Posn.Y = math.Min(cir.Posn.Y+20, room.Rect.Max.Y) - 20
+
+	if vecDist(room.Booster.Posn, cir.Posn) < 30 && room.Booster.Present {
+		room.Booster.Present = false
+		cir.Bullets += 10
+		cir.GunType = 2
+	}
 
 	// Update Shots
 BulletLoop:
@@ -366,7 +375,7 @@ BulletLoop:
 			}
 		}
 		// Does more checks than necesarry in the case that it does collide.
-		if !(room.Rect.Contains(cir.Shots[bulletInd].Posn2)) || (collision(&room, cir.Shots[bulletInd].Posn2, 1) != pixel.ZV) {
+		if !(room.Rect.Contains(cir.Shots[bulletInd].Posn2)) || (collision(room, cir.Shots[bulletInd].Posn2, 1) != pixel.ZV) {
 			cir.Shots[bulletInd] = cir.Shots[len(cir.Shots)-1]
 			cir.Shots = cir.Shots[:len(cir.Shots)-1]
 			bulletInd--

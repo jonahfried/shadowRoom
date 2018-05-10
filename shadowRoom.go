@@ -117,14 +117,6 @@ func illuminate(room Place, cir Agent, point *imdraw.IMDraw, win *pixelgl.Window
 	}
 }
 
-func timer(monsters *[]Creature) {
-	tick := time.Tick(time.Second * 5)
-	for {
-		*monsters = append(*monsters, MakeCreature(0, 0))
-		<-tick
-	}
-}
-
 func loadPicture(path string) (pixel.Picture, error) {
 	file, err := os.Open(path)
 	if err != nil {
@@ -174,7 +166,9 @@ func run() {
 	point := imdraw.New(nil)
 	point.Color = colornames.Black
 
-	go timer(&cir.Monsters)
+	frameRate := time.Tick(time.Millisecond * 17)
+	fiveSec := time.Tick(time.Second * 5)
+	thirtySec := time.Tick(time.Second * 30)
 
 	last := time.Now()
 
@@ -184,10 +178,21 @@ func run() {
 	// Main Draw Loop:
 	for !win.Closed() {
 		dt := time.Since(last).Seconds()
-		if frames > 20 {
+		if frames > 200 {
 			frames = 0
 			seconds = 0
 		}
+
+		select {
+		case <-frameRate:
+
+		case <-fiveSec:
+			cir.Monsters = append(cir.Monsters, MakeCreature(0, 0))
+		case <-thirtySec:
+			// room.presentBoost()
+
+		}
+
 		seconds += dt
 		frames++
 		last = time.Now()
@@ -203,7 +208,7 @@ func run() {
 		win.Clear(colornames.Black)
 		room.Disp()
 
-		cir.Update(win, room)
+		cir.Update(win, &room)
 
 		cir.Cam.Attract(cir.Posn)
 		cir.Cam.Matrix = pixel.IM.Moved(win.Bounds().Center().Sub(cir.Cam.Posn))
