@@ -2,11 +2,9 @@ package main
 
 import (
 	"fmt"
-	"image"
 	_ "image/png"
 	"math"
 	"math/rand"
-	"os"
 	"sort"
 	"time"
 
@@ -117,44 +115,30 @@ func illuminate(room Place, cir Agent, point *imdraw.IMDraw, win *pixelgl.Window
 	}
 }
 
-func loadPicture(path string) (pixel.Picture, error) {
-	file, err := os.Open(path)
-	if err != nil {
-		return nil, err
-	}
-	defer file.Close()
-	img, _, err := image.Decode(file)
-	if err != nil {
-		return nil, err
-	}
-	return pixel.PictureDataFromImage(img), nil
-}
-
 // Acting main function
-func run() {
-	// setting up the window
-	cfg := pixelgl.WindowConfig{
-		Title:  "shadowRoom",
-		Bounds: pixel.R(0, 0, 1350, 725),
-		VSync:  true,
-		// Resizable: true,
+func run(window ...*pixelgl.Window) {
+	var win *pixelgl.Window
+	if len(window) == 0 {
+		// setting up the window
+		cfg := pixelgl.WindowConfig{
+			Title:  "shadowRoom",
+			Bounds: pixel.R(0, 0, 1350, 725),
+			VSync:  true,
+			// Resizable: true,
+		}
+		var err error
+		win, err = pixelgl.NewWindow(cfg)
+		if err != nil {
+			panic(err)
+		}
+	} else {
+		win = window[0]
 	}
-	win, err := pixelgl.NewWindow(cfg)
-	if err != nil {
-		panic(err)
-	}
-
-	lightingPic, err := loadPicture("drawing.png")
-	if err != nil {
-		panic(err)
-	}
-
-	lightingSprite := pixel.NewSprite(lightingPic, pixel.R(0, 0, 1200, 1200))
 
 	// rooms := make(map[pixel.Vec]struct{ bottemLeft, topRight float64 })
 
 	// setting up the Player
-	var cir = MakeAgent(0, 0, win, lightingSprite)
+	var cir = MakeAgent(0, 0, win)
 
 	// setting up the camera
 	// cam := player.MakeCamera(cir.Posn, win)
@@ -176,7 +160,7 @@ func run() {
 	seconds := 0.0
 
 	// Main Draw Loop:
-	for !win.Closed() {
+	for !win.Closed() && cir.Health > 0 {
 		dt := time.Since(last).Seconds()
 		if frames > 200 {
 			frames = 0
@@ -189,7 +173,7 @@ func run() {
 		case <-fiveSec:
 			cir.Monsters = append(cir.Monsters, MakeCreature(0, 0))
 		case <-thirtySec:
-			// room.presentBoost()
+			room.presentBoost()
 
 		}
 
@@ -242,33 +226,52 @@ func run() {
 		cir.Light(&room)
 
 		room.Target.SetComposeMethod(pixel.ComposeIn)
+		if room.Booster.Present {
+			room.Booster.Img.Clear()
+			room.Booster.Img.Push(room.Booster.Posn)
+			room.Booster.Img.Circle(10, 0)
+			room.Booster.Img.Draw(room.Target)
+		}
+
 		for monsterInd := range cir.Monsters {
 			monsterTarget := AStar(room.GridRepresentation, cir.Monsters[monsterInd].Posn, cir.Posn, &cir)
-			cir.Monsters[monsterInd].Update(room, monsterTarget, cir.Monsters)
+			cir.Monsters[monsterInd].Update(room, &cir, monsterTarget, cir.Monsters)
 			cir.Monsters[monsterInd].Disp(room.Target)
 		}
 
 		cir.DispShots(room.Target)
+
 		room.Target.SetComposeMethod(pixel.ComposeOver)
 		room.Disp()
+
 		room.Target.Draw(win, pixel.IM) //.Moved(win.Bounds().Center()))
-
-		cir.DispShots(room.Target)
-
-		illuminate(room, cir, point, win)
-
-		cir.Disp(win)
 		basicTxt.Draw(win, pixel.IM)
+		cir.Disp(win)
+		illuminate(room, cir, point, win)
 
 		win.Update()
 		// time.Sleep(1 / 2 * time.Second)
 	}
-	fmt.Print("\nWindow Closed: App Shutting Down \n")
-	// fmt.Printf("Playerdata at close: %v \n \n", cir)
+	for !win.Closed() {
+		win.Clear(colornames.Whitesmoke)
+		endscreen := text.NewAtlas(basicfont.Face7x13, text.ASCII)
+		endTxt := text.New(cir.Posn.Add(pixel.V(-20, 30)), endscreen)
+		endTxt.Color = colornames.Black
+		fmt.Fprint(endTxt, "Game Over!\n(space to restart)")
+		endTxt.Draw(win, pixel.IM)
+		if win.JustPressed(pixelgl.KeySpace) {
+			run(win)
+		}
+		win.Update()
+	}
+}
+
+func starter() {
+	run()
 }
 
 func main() {
 	rand.Seed(time.Now().UTC().UnixNano())
 
-	pixelgl.Run(run)
+	pixelgl.Run(starter)
 }

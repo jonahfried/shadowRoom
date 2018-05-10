@@ -24,19 +24,19 @@ type Agent struct {
 
 	Cam Camera
 
+	Health int
+
 	Monsters []Creature
 	Shots    []Shot
 	ShotsImg *imdraw.IMDraw
 	GunType  int
 	Bullets  int
 
-	Fade   pixel.Picture
-	Sprite *pixel.Sprite
-	Img    *imdraw.IMDraw
+	Img *imdraw.IMDraw
 }
 
 // MakeAgent creates a new agent starting at a given (x, y) coordinate
-func MakeAgent(x, y float64, win *pixelgl.Window, sprite *pixel.Sprite) (cir Agent) {
+func MakeAgent(x, y float64, win *pixelgl.Window) (cir Agent) {
 	cir.Posn = pixel.V(x, y)
 	cir.Vel = pixel.ZV
 	cir.Acc = pixel.ZV
@@ -49,15 +49,13 @@ func MakeAgent(x, y float64, win *pixelgl.Window, sprite *pixel.Sprite) (cir Age
 	cir.Level = 0.02
 	cir.Spacing = 6
 	cir.Count = 88
+	cir.Health = 100
 
 	cir.Monsters = make([]Creature, 0)
 	cir.Shots = make([]Shot, 0)
 	cir.ShotsImg = imdraw.New(nil)
 	cir.GunType = 1
 	cir.Bullets = 0
-
-	cir.Fade = sprite.Picture()
-	cir.Sprite = sprite
 
 	cir.Img = imdraw.New(nil)
 	cir.Img.Color = colornames.Purple
@@ -139,42 +137,42 @@ func (cir *Agent) PressHandler(win *pixelgl.Window) {
 	if win.Pressed(pixelgl.KeyW) {
 		cir.Acc = cir.Acc.Add(pixel.V(0, 5))
 	}
-	if win.JustPressed(pixelgl.KeyJ) {
-		cir.Posn.X--
-	}
-	if win.JustPressed(pixelgl.KeyL) {
-		cir.Posn.X++
-	}
-	if win.JustPressed(pixelgl.KeyK) {
-		cir.Posn.Y--
-	}
-	if win.JustPressed(pixelgl.KeyI) {
-		cir.Posn.Y++
-	}
-	if win.JustPressed(pixelgl.KeySpace) {
-		cir.Shade = !cir.Shade
-	}
-	if win.JustPressed(pixelgl.KeyF) {
-		cir.Fill = !cir.Fill
-	}
-	if win.JustPressed(pixelgl.KeyUp) {
-		cir.Level += .001
-	}
-	if win.JustPressed(pixelgl.KeyDown) {
-		cir.Level -= .001
-	}
-	if win.JustPressed(pixelgl.KeyRight) {
-		cir.Spacing++
-	}
-	if win.JustPressed(pixelgl.KeyLeft) {
-		cir.Spacing--
-	}
-	if win.Pressed(pixelgl.KeyComma) {
-		cir.Count--
-	}
-	if win.Pressed(pixelgl.KeyPeriod) {
-		cir.Count++
-	}
+	// if win.JustPressed(pixelgl.KeyJ) {
+	// 	cir.Posn.X--
+	// }
+	// if win.JustPressed(pixelgl.KeyL) {
+	// 	cir.Posn.X++
+	// }
+	// if win.JustPressed(pixelgl.KeyK) {
+	// 	cir.Posn.Y--
+	// }
+	// if win.JustPressed(pixelgl.KeyI) {
+	// 	cir.Posn.Y++
+	// }
+	// if win.JustPressed(pixelgl.KeySpace) {
+	// 	cir.Shade = !cir.Shade
+	// }
+	// if win.JustPressed(pixelgl.KeyF) {
+	// 	cir.Fill = !cir.Fill
+	// }
+	// if win.JustPressed(pixelgl.KeyUp) {
+	// 	cir.Level += .001
+	// }
+	// if win.JustPressed(pixelgl.KeyDown) {
+	// 	cir.Level -= .001
+	// }
+	// if win.JustPressed(pixelgl.KeyRight) {
+	// 	cir.Spacing++
+	// }
+	// if win.JustPressed(pixelgl.KeyLeft) {
+	// 	cir.Spacing--
+	// }
+	// if win.Pressed(pixelgl.KeyComma) {
+	// 	cir.Count--
+	// }
+	// if win.Pressed(pixelgl.KeyPeriod) {
+	// 	cir.Count++
+	// }
 
 	if win.JustPressed(pixelgl.MouseButton1) {
 		cir.fire(win)
@@ -204,6 +202,7 @@ func (cir *Agent) Disp(win *pixelgl.Window) {
 	cir.Img.Push(cir.Posn)
 	cir.Img.Circle(20, 0)
 	cir.Img.Draw(win)
+	cir.Img.Color = colornames.Purple
 }
 
 // Light adds fading light (white circles) around an Agent's posn

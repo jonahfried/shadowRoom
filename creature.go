@@ -46,7 +46,7 @@ func magnitude(vec pixel.Vec) float64 {
 
 // Update is a method for a creature, taking in a room
 // returning nothing, it alters the position and velocity of the creature
-func (monster *Creature) Update(room Place, target pixel.Vec, monsters []Creature) {
+func (monster *Creature) Update(room Place, cir *Agent, target pixel.Vec, monsters []Creature) {
 	acc := target.Sub(monster.Posn) //limitVecMag(target.Sub(monster.Posn), vecDist(monster.Posn, target)/10)
 
 	acc = acc.Sub(monster.Vel)
@@ -113,33 +113,27 @@ func (monster *Creature) Update(room Place, target pixel.Vec, monsters []Creatur
 
 	}
 
-	// for blobInd := range monsters {
-	// 	dist := monsters[blobInd].Posn.Sub(monster.Posn)
-	// 	if magnitude(dist) < 40 && magnitude(dist) > 0 {
-	// 		monster.Vel = monster.Vel.Sub(dist.Scaled(.09))
-	// 		monsters[blobInd].Vel = monsters[blobInd].Vel.Add(dist.Scaled(.09))
-	// 	}
-	// }
+	playerDist := cir.Posn.Sub(monster.Posn)
+	if magnitude(playerDist) < 40 && magnitude(playerDist) > 0 {
+		changeBy := (40 - magnitude(playerDist)) / 2
+		monster.Vel = monster.Vel.Sub(playerDist.Scaled(2 * changeBy / magnitude(playerDist)))
+		cir.Vel = cir.Vel.Add(playerDist.Scaled(changeBy / magnitude(playerDist)))
+		cir.Img.Color = colornames.Red
+		cir.Health--
+		// monsters[blobInd].Posn = monsters[blobInd].Posn.Sub(dist)
+	}
+
+	for blobInd := range monsters {
+		dist := monsters[blobInd].Posn.Sub(monster.Posn)
+		if magnitude(dist) < 40 && magnitude(dist) > 0 {
+			changeBy := (40 - magnitude(dist)) / 2
+			monster.Vel = monster.Vel.Sub(dist.Scaled(changeBy / magnitude(dist)))
+			monsters[blobInd].Vel = monsters[blobInd].Vel.Add(dist.Scaled(changeBy / magnitude(dist)))
+			// monsters[blobInd].Posn = monsters[blobInd].Posn.Sub(dist)
+		}
+	}
 
 	monster.Posn = monster.Posn.Add(monster.Vel)
-
-	// monster.Posn = monster.Posn.Add(monster.Vel)
-	// if monster.Posn.X > (room.Rect.Max.X - 20) {
-	// 	monster.Posn.X = (room.Rect.Max.X - 20)
-	// 	monster.Vel.X *= -1
-	// }
-	// if monster.Posn.X < (room.Rect.Min.X + 20) {
-	// 	monster.Posn.X = (room.Rect.Min.X + 20)
-	// 	monster.Vel.X *= -1
-	// }
-	// if monster.Posn.Y > (room.Rect.Max.Y - 20) {
-	// 	monster.Posn.Y = (room.Rect.Max.Y - 20)
-	// 	monster.Vel.Y *= -1
-	// }
-	// if monster.Posn.Y < (room.Rect.Min.Y + 20) {
-	// 	monster.Posn.Y = (room.Rect.Min.Y + 20)
-	// 	monster.Vel.Y *= -1
-	// }
 }
 
 // Disp draws a creature based on its Img

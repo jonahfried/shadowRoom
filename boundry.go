@@ -62,10 +62,10 @@ func MakePlace(rect pixel.Rect, numBlocks int, blocks ...Obsticle) (room Place) 
 		room.Blocks = blocks
 	}
 
-	room.Booster.Present = true
+	room.Booster.Present = false
 	room.Booster.Posn = pixel.V(100, 100)
 	room.Booster.Img = imdraw.New(nil)
-	room.Booster.Img.Color = colornames.Blue
+	room.Booster.Img.Color = colornames.Royalblue
 	// room.Booster.Img.Precision = 32
 
 	room.Target = pixelgl.NewCanvas(rect)
@@ -100,13 +100,6 @@ func (room *Place) Disp() {
 		bc.Img.Draw(room.Target)
 		// bcImg.Push(bc.Center)
 		// bcImg.Circle(bc.Radius, 0)
-	}
-
-	if room.Booster.Present {
-		room.Booster.Img.Clear()
-		room.Booster.Img.Push(room.Booster.Posn)
-		room.Booster.Img.Circle(60, 0)
-		room.Booster.Img.Draw(room.Target)
 	}
 
 	room.Target.SetComposeMethod(pixel.ComposeOver)
@@ -380,6 +373,7 @@ func AStar(grid Grid, startPosn, goal pixel.Vec, cir *Agent) pixel.Vec {
 	shiftedStart := startPosn.Sub(min)
 	shiftedGoal := goal.Sub(min)
 
+	/* Will crash if monster is out of room bounds (if pushed from contact) */
 	startXInd := int(math.Floor(shiftedStart.X / grid.TileSize.X))
 	startYInd := int(math.Floor(shiftedStart.Y / grid.TileSize.Y))
 	startIndex := (startYInd * grid.TilesPerRow) + startXInd
