@@ -1,6 +1,9 @@
 package main
 
 import (
+	"math"
+	"math/rand"
+
 	"github.com/faiface/pixel"
 	"github.com/faiface/pixel/imdraw"
 	"github.com/faiface/pixel/pixelgl"
@@ -19,8 +22,29 @@ type Creature struct {
 }
 
 // MakeCreature takes a starting x and y (float64), and returns a *Creature
-func MakeCreature(x, y float64) (monster Creature) {
-	monster.Posn = pixel.V(x, y)
+func MakeCreature(room *Place, cir *Agent) (monster Creature) {
+	xPosn := room.Rect.Center().X + (rand.Float64()-rand.Float64())*room.Rect.W()/2
+	yPosn := room.Rect.Center().Y + (rand.Float64()-rand.Float64())*room.Rect.H()/2
+	posn := pixel.V(xPosn, yPosn)
+TryLoop:
+	for tries := 0; tries < 10; tries++ {
+		if vecDist(posn, cir.Posn) < 80 {
+			xPosn = room.Rect.Center().X + (rand.Float64()-rand.Float64())*room.Rect.W()/2
+			yPosn = room.Rect.Center().Y + (rand.Float64()-rand.Float64())*room.Rect.H()/2
+			posn = pixel.V(xPosn, yPosn)
+			continue TryLoop
+		}
+		for _, obst := range room.Blocks {
+			if vecDist(posn, obst.Center) < (obst.Radius + 20) {
+				xPosn = room.Rect.Center().X + (rand.Float64()-rand.Float64())*room.Rect.W()/2
+				yPosn = room.Rect.Center().Y + (rand.Float64()-rand.Float64())*room.Rect.H()/2
+				posn = pixel.V(xPosn, yPosn)
+				continue TryLoop
+			}
+			break TryLoop
+		}
+	}
+	monster.Posn = posn
 	monster.Vel = pixel.V(0, 0)
 
 	monster.Health = 5
@@ -134,6 +158,11 @@ func (monster *Creature) Update(room Place, cir *Agent, target pixel.Vec, monste
 	}
 
 	monster.Posn = monster.Posn.Add(monster.Vel)
+	monster.Posn.X = math.Min(monster.Posn.X, room.Rect.Max.X-20)
+	monster.Posn.X = math.Max(monster.Posn.X, room.Rect.Min.X+20)
+
+	monster.Posn.Y = math.Min(monster.Posn.Y, room.Rect.Max.Y-20)
+	monster.Posn.Y = math.Max(monster.Posn.Y, room.Rect.Min.Y+20)
 }
 
 // Disp draws a creature based on its Img
@@ -144,3 +173,36 @@ func (monster *Creature) Disp(win *pixelgl.Canvas) {
 	monster.Img.Draw(win)
 	monster.Img.Color = colornames.Darkolivegreen
 }
+
+// // a runner is a kind of monster that "leaps" at a target after some time "tracking" them
+// type runner struct {
+// 	Posn, Vel                  pixel.Vec
+// 	Health                     int
+// 	Angle, TrackTime, AngleVel float64
+
+// 	Img *imdraw.IMDraw
+// }
+
+// // Update updates a runner type monster
+// func (monster *runner) Update(target pixel.Vec, dt float64) {
+// 	if magnitude(monster.Vel) < .1 {
+// 		monster.Vel = pixel.ZV
+// 	}
+// 	if monster.TrackTime < 10 {
+// 		monster.TrackTime += dt
+// 		targetAngle := math.Atan2(monster.Posn.Y-target.Y, monster.Posn.X-target.X)
+// 		goalChange := monster.Angle - targetAngle
+// 		monster.AngleVel += goalChange * .3
+// 	}
+// }
+
+// // Disp displays a runner
+// func (monster runner) Disp(target pixel.Target) {
+// 	dirVec := pixel.V(math.Cos(monster.Angle), math.Sin(monster.Angle))
+// 	monster.Img.Clear()
+// 	monster.Img.Push(monster.Posn.Add(dirVec))
+
+// 	dirVec =
+// 		monster.Img.Push(monster.Posn.Add(dirVec))
+// 	monster.Img.Push(monster.Posn.Add(dirVec))
+// }

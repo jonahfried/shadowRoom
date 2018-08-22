@@ -1,0 +1,4 @@
+make engine work on delta time (instead of frames)
+refactor variable naming
+refactor in general
+try to make more wieldy (fix what is stored in what, etc...)

@@ -171,7 +171,7 @@ func run(window ...*pixelgl.Window) {
 		case <-frameRate:
 
 		case <-fiveSec:
-			cir.Monsters = append(cir.Monsters, MakeCreature(0, 0))
+			cir.Monsters = append(cir.Monsters, MakeCreature(&room, &cir))
 		case <-thirtySec:
 			room.presentBoost()
 
