@@ -83,6 +83,7 @@ func (cir *Agent) fire(win *pixelgl.Window) {
 		bullet.color = pixel.ToRGBA(colornames.Firebrick).Mul(pixel.Alpha(.7))
 		bullet.Posn1 = cir.Posn
 		bullet.Posn2 = cir.Posn.Add(directionVec.Scaled(10))
+		// bullet.Vel.Add(cir.Vel)
 		bullet.Vel = directionVec.Scaled(14)
 		cir.Shots = append(cir.Shots, bullet)
 	case 2:
