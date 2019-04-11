@@ -5,7 +5,6 @@ import (
 	_ "image/png"
 	"math"
 	"math/rand"
-	"sort"
 	"time"
 
 	"golang.org/x/image/colornames"
@@ -16,104 +15,6 @@ import (
 	"github.com/faiface/pixel/pixelgl"
 	"github.com/faiface/pixel/text"
 )
-
-func illuminate(room Place, cir Agent, point *imdraw.IMDraw, win *pixelgl.Window) {
-	point.Clear()
-	anglesToCheck := make([]float64, 0, 10)
-	for _, block := range room.Blocks {
-		for _, vertex := range block.Vertices {
-			theta := math.Atan2((vertex.Y - cir.Posn.Y), (vertex.X - cir.Posn.X))
-			anglesToCheck = append(anglesToCheck, theta)
-		}
-		length := len(anglesToCheck)
-		for k := 0; k < length; k++ {
-			for offset := -.000001; offset <= .000001; offset += .000001 {
-				anglesToCheck = append(anglesToCheck, anglesToCheck[k]+offset)
-			}
-		}
-		shadedVertices := make([]pixel.Vec, 0)
-		for _, vertex := range room.Vertices {
-			theta := math.Atan2((vertex.Y - cir.Posn.Y), (vertex.X - cir.Posn.X))
-			landed := Obstruct(cir.Posn, theta, room, block)
-			if math.Abs(vecDist(landed, cir.Posn)-vecDist(vertex, cir.Posn)) > 1 {
-				// point.Push(vertex)
-				shadedVertices = append(shadedVertices, vertex)
-				// if !cir.shade {
-				// 	point.Circle(4, 0)
-				// }
-			}
-		}
-		shapePoints := make([]pixel.Vec, 0)
-		sort.Float64s(anglesToCheck)
-		for _, angle := range anglesToCheck {
-			vec := Obstruct(cir.Posn, angle, room, block)
-			shapePoints = append(shapePoints, vec)
-			point.Push(vec)
-			if !cir.Shade {
-				point.Circle(4, 0)
-			}
-		}
-		if cir.Shade {
-			if cir.Fill {
-				point.Polygon(0)
-			} else {
-				point.Polygon(1)
-			}
-		}
-		for _, vertex := range shadedVertices {
-			for vecInd := 1; vecInd < len(shapePoints); vecInd++ {
-				point.Push(vertex)
-				if !cir.Shade {
-					point.Circle(4, 0)
-				}
-				point.Push(shapePoints[vecInd])
-				if !cir.Shade {
-					point.Circle(4, 0)
-				}
-				point.Push(shapePoints[vecInd-1])
-				if !cir.Shade {
-					point.Circle(4, 0)
-				}
-				if cir.Shade {
-					if cir.Fill {
-						point.Polygon(0)
-					} else {
-						point.Polygon(1)
-					}
-				}
-			}
-		}
-
-		if len(shadedVertices) > 1 {
-			for vertexInd := 1; vertexInd < len(shadedVertices); vertexInd++ {
-				point.Push(shadedVertices[vertexInd-1])
-				if !cir.Shade {
-					point.Circle(4, 0)
-				}
-				point.Push(shadedVertices[vertexInd])
-				if !cir.Shade {
-					point.Circle(4, 0)
-				}
-				point.Push(shapePoints[0])
-				if !cir.Shade {
-					point.Circle(4, 0)
-				}
-				if cir.Shade {
-					if cir.Fill {
-						point.Polygon(0)
-					} else {
-						point.Polygon(1)
-					}
-				}
-
-			}
-		}
-
-		anglesToCheck = make([]float64, 0, 10)
-		shapePoints = make([]pixel.Vec, 0)
-		point.Draw(win)
-	}
-}
 
 // Acting main function
 func run(window ...*pixelgl.Window) {
@@ -171,7 +72,7 @@ func run(window ...*pixelgl.Window) {
 		case <-frameRate:
 
 		case <-fiveSec:
-			cir.Monsters = append(cir.Monsters, MakeCreature(&room, &cir))
+			// cir.Monsters = append(cir.Monsters, MakeCreature(&room, &cir))
 		case <-thirtySec:
 			room.presentBoost()
 
@@ -247,7 +148,8 @@ func run(window ...*pixelgl.Window) {
 		room.Target.Draw(win, pixel.IM) //.Moved(win.Bounds().Center()))
 		basicTxt.Draw(win, pixel.IM)
 		cir.Disp(win)
-		illuminate(room, cir, point, win)
+		illuminate(room, cir, point)
+		point.Draw(win)
 
 		win.Update()
 		// time.Sleep(1 / 2 * time.Second)

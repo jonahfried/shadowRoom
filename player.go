@@ -138,42 +138,42 @@ func (cir *Agent) PressHandler(win *pixelgl.Window) {
 	if win.Pressed(pixelgl.KeyW) {
 		cir.Acc = cir.Acc.Add(pixel.V(0, 5))
 	}
-	// if win.JustPressed(pixelgl.KeyJ) {
-	// 	cir.Posn.X--
-	// }
-	// if win.JustPressed(pixelgl.KeyL) {
-	// 	cir.Posn.X++
-	// }
-	// if win.JustPressed(pixelgl.KeyK) {
-	// 	cir.Posn.Y--
-	// }
-	// if win.JustPressed(pixelgl.KeyI) {
-	// 	cir.Posn.Y++
-	// }
-	// if win.JustPressed(pixelgl.KeySpace) {
-	// 	cir.Shade = !cir.Shade
-	// }
-	// if win.JustPressed(pixelgl.KeyF) {
-	// 	cir.Fill = !cir.Fill
-	// }
-	// if win.JustPressed(pixelgl.KeyUp) {
-	// 	cir.Level += .001
-	// }
-	// if win.JustPressed(pixelgl.KeyDown) {
-	// 	cir.Level -= .001
-	// }
-	// if win.JustPressed(pixelgl.KeyRight) {
-	// 	cir.Spacing++
-	// }
-	// if win.JustPressed(pixelgl.KeyLeft) {
-	// 	cir.Spacing--
-	// }
-	// if win.Pressed(pixelgl.KeyComma) {
-	// 	cir.Count--
-	// }
-	// if win.Pressed(pixelgl.KeyPeriod) {
-	// 	cir.Count++
-	// }
+	if win.JustPressed(pixelgl.KeyJ) {
+		cir.Posn.X--
+	}
+	if win.JustPressed(pixelgl.KeyL) {
+		cir.Posn.X++
+	}
+	if win.JustPressed(pixelgl.KeyK) {
+		cir.Posn.Y--
+	}
+	if win.JustPressed(pixelgl.KeyI) {
+		cir.Posn.Y++
+	}
+	if win.JustPressed(pixelgl.KeySpace) {
+		cir.Shade = !cir.Shade
+	}
+	if win.JustPressed(pixelgl.KeyF) {
+		cir.Fill = !cir.Fill
+	}
+	if win.JustPressed(pixelgl.KeyUp) {
+		cir.Level += .001
+	}
+	if win.JustPressed(pixelgl.KeyDown) {
+		cir.Level -= .001
+	}
+	if win.JustPressed(pixelgl.KeyRight) {
+		cir.Spacing++
+	}
+	if win.JustPressed(pixelgl.KeyLeft) {
+		cir.Spacing--
+	}
+	if win.Pressed(pixelgl.KeyComma) {
+		cir.Count--
+	}
+	if win.Pressed(pixelgl.KeyPeriod) {
+		cir.Count++
+	}
 
 	if win.JustPressed(pixelgl.MouseButton1) {
 		cir.fire(win)

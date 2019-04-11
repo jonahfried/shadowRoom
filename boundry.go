@@ -16,7 +16,7 @@ import (
 // and a slice of its vertices
 type Place struct {
 	Rect               pixel.Rect
-	Blocks             []Obsticle
+	Blocks             []Obstacle
 	Vertices           []pixel.Vec
 	GridRepresentation Grid
 	Booster            Boost
@@ -33,9 +33,9 @@ type Boost struct {
 	Img *imdraw.IMDraw
 }
 
-// MakePlace turns specifications of a place, (rectangle and the Obsticles it contains)
+// MakePlace turns specifications of a place, (rectangle and the Obstacles it contains)
 // and returns a Place
-func MakePlace(rect pixel.Rect, numBlocks int, blocks ...Obsticle) (room Place) {
+func MakePlace(rect pixel.Rect, numBlocks int, blocks ...Obstacle) (room Place) {
 	room.Rect = rect
 
 	borderVertices := make([]pixel.Vec, 0, 4)
@@ -47,7 +47,7 @@ func MakePlace(rect pixel.Rect, numBlocks int, blocks ...Obsticle) (room Place) 
 	room.Vertices = borderVertices
 
 	if len(blocks) == 0 {
-		blockList := make([]Obsticle, 0)
+		blockList := make([]Obstacle, 0)
 		for ind := 0; ind < numBlocks; ind++ {
 			// TODO: randomize more of the blocks
 			// -	Take the bounds and set variables for Radius/stdDev
@@ -106,12 +106,12 @@ func (room *Place) Disp() {
 	// bcImg.Draw(room.Target)
 }
 
-// Obsticle is a data structure defining a boundry inside a room
+// Obstacle is a data structure defining a boundry inside a room
 // it contains:
 //	 a list of vertices defining its bounds
 //	 and an *imdraw.IMdraw to store its look.
 //	 also stores a Center and Radius set if generated randomly to avoid overlap
-type Obsticle struct {
+type Obstacle struct {
 	Vertices []pixel.Vec
 	Center   pixel.Vec
 	Radius   float64
@@ -119,10 +119,10 @@ type Obsticle struct {
 	Img *imdraw.IMDraw
 }
 
-// MakeObsticle takes in a list of vertices that define its boundries,
+// MakeObstacle takes in a list of vertices that define its boundries,
 // and a bool representing whether or not it is a Room.
-// returns an Obsticle
-func MakeObsticle(vertices []pixel.Vec, center pixel.Vec, radius float64) (obst Obsticle) {
+// returns an Obstacle
+func MakeObstacle(vertices []pixel.Vec, center pixel.Vec, radius float64) (obst Obstacle) {
 	obst.Vertices = vertices
 	obst.Center = center
 	obst.Radius = radius
@@ -141,8 +141,8 @@ func MakeObsticle(vertices []pixel.Vec, center pixel.Vec, radius float64) (obst 
 
 // MakeRandomBlock takes in a standard radius,
 // a standard deviation from the radius, a number of vertices to create, (float64)
-// and a Room to hold it, returning a randomly generated Obsticle
-func MakeRandomBlock(radius, stdDev, vertScale float64, rect pixel.Rect, existingBlocks []Obsticle) Obsticle {
+// and a Room to hold it, returning a randomly generated Obstacle
+func MakeRandomBlock(radius, stdDev, vertScale float64, rect pixel.Rect, existingBlocks []Obstacle) Obstacle {
 	centerX := rect.Center().X + (rand.Float64() * rect.W()) - (rect.W() / 2)
 	centerY := rect.Center().Y + (rand.Float64() * rect.H()) - (rect.H() / 2)
 	center := pixel.V(centerX, centerY)
@@ -173,7 +173,7 @@ TryLoop:
 
 		vertices = append(vertices, vertex)
 	}
-	return MakeObsticle(vertices, center, radius+stdDev)
+	return MakeObstacle(vertices, center, radius+stdDev)
 }
 
 func vecDist(v1, v2 pixel.Vec) float64 {
@@ -182,8 +182,8 @@ func vecDist(v1, v2 pixel.Vec) float64 {
 
 // Obstruct takes in a "viewers" position, and an angle of viewing.
 // it also takes a room for its boundries
-// and an obsticle of interest to determine intersection
-func Obstruct(posn pixel.Vec, angle float64, room Place, block Obsticle) (stopPoint pixel.Vec) {
+// and an Obstacle of interest to determine intersection
+func Obstruct(posn pixel.Vec, angle float64, room Place, block Obstacle) (stopPoint pixel.Vec) {
 	// TODO: Fix divide by zero error
 	if (math.Cos(angle)) == 0 {
 		panic("divide by zero")
@@ -193,10 +193,10 @@ func Obstruct(posn pixel.Vec, angle float64, room Place, block Obsticle) (stopPo
 
 	extension := 0.000000001
 
-	var blocks [2]Obsticle
+	var blocks [2]Obstacle
 
 	blocks[0] = block
-	blocks[1] = MakeObsticle(room.Vertices, pixel.ZV, 0)
+	blocks[1] = MakeObstacle(room.Vertices, pixel.ZV, 0)
 
 	stopPoint = pixel.V(math.MaxFloat64, (math.MaxFloat64*slope)+yInt)
 
