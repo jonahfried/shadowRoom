@@ -70,16 +70,10 @@ func run(win *pixelgl.Window, devMode, noSpawns bool) pixel.Vec {
 		win.SetMatrix(cir.Cam.Matrix)
 
 		room.Target.Clear(pixel.Alpha(0))
-		room.Disp()
+		room.Target.SetComposeMethod(pixel.ComposeOver)
 		cir.Light(&room)
-
 		room.Target.SetComposeMethod(pixel.ComposeIn)
-		if room.Booster.Present {
-			room.Booster.Img.Clear()
-			room.Booster.Img.Push(room.Booster.Posn)
-			room.Booster.Img.Circle(10, 0)
-			room.Booster.Img.Draw(room.Target)
-		}
+		room.Disp()
 
 		for monsterInd := range cir.Monsters {
 			monsterTarget := AStar(room.GridRepresentation, cir.Monsters[monsterInd].Posn, cir.Posn, &cir)
@@ -89,8 +83,7 @@ func run(win *pixelgl.Window, devMode, noSpawns bool) pixel.Vec {
 
 		cir.DispShots(room.Target)
 
-		room.Target.SetComposeMethod(pixel.ComposeOver)
-		room.Disp()
+		// room.Disp()
 
 		room.Target.Draw(win, pixel.IM) //.Moved(win.Bounds().Center()))
 		if devMode {

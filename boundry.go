@@ -84,9 +84,8 @@ func (room *Place) presentBoost() {
 
 // Disp updates and displays a room's Img
 func (room *Place) Disp() {
-	// room.Target.Clear(pixel.Alpha(0))
-	// room.Target.Clear(colornames.Green)
-	room.Target.SetComposeMethod(pixel.ComposeIn)
+	room.DispBoost()
+	// room.Target.SetComposeMethod(pixel.ComposeIn)
 	room.Img.Clear()
 	room.Img.Color = colornames.Burlywood
 	room.Img.Push(room.Rect.Center().Sub(room.Rect.Size().Scaled(.5)))
@@ -102,8 +101,18 @@ func (room *Place) Disp() {
 		// bcImg.Circle(bc.Radius, 0)
 	}
 
-	room.Target.SetComposeMethod(pixel.ComposeOver)
+	// room.Target.SetComposeMethod(pixel.ComposeOver)
 	// bcImg.Draw(room.Target)
+}
+
+// DispBoost draws the boost to the room's target, if present.
+func (room *Place) DispBoost() {
+	if room.Booster.Present {
+		room.Booster.Img.Clear()
+		room.Booster.Img.Push(room.Booster.Posn)
+		room.Booster.Img.Circle(10, 0)
+		room.Booster.Img.Draw(room.Target)
+	}
 }
 
 // Obstacle is a data structure defining a boundry inside a room
