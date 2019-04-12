@@ -21,6 +21,7 @@ type Agent struct {
 	Level   float64
 	Spacing int
 	Count   int
+	devMode bool
 
 	Cam Camera
 
@@ -36,7 +37,7 @@ type Agent struct {
 }
 
 // MakeAgent creates a new agent starting at a given (x, y) coordinate
-func MakeAgent(x, y float64, win *pixelgl.Window) (cir Agent) {
+func MakeAgent(x, y float64, win *pixelgl.Window, devMode bool) (cir Agent) {
 	cir.Posn = pixel.V(x, y)
 	cir.Vel = pixel.ZV
 	cir.Acc = pixel.ZV
@@ -49,6 +50,8 @@ func MakeAgent(x, y float64, win *pixelgl.Window) (cir Agent) {
 	cir.Level = 0.02
 	cir.Spacing = 6
 	cir.Count = 88
+	cir.devMode = devMode
+
 	cir.Health = 100
 
 	cir.Monsters = make([]Creature, 0)
@@ -138,41 +141,44 @@ func (cir *Agent) PressHandler(win *pixelgl.Window) {
 	if win.Pressed(pixelgl.KeyW) {
 		cir.Acc = cir.Acc.Add(pixel.V(0, 5))
 	}
-	if win.JustPressed(pixelgl.KeyJ) {
-		cir.Posn.X--
-	}
-	if win.JustPressed(pixelgl.KeyL) {
-		cir.Posn.X++
-	}
-	if win.JustPressed(pixelgl.KeyK) {
-		cir.Posn.Y--
-	}
-	if win.JustPressed(pixelgl.KeyI) {
-		cir.Posn.Y++
-	}
-	if win.JustPressed(pixelgl.KeySpace) {
-		cir.Shade = !cir.Shade
-	}
-	if win.JustPressed(pixelgl.KeyF) {
-		cir.Fill = !cir.Fill
-	}
-	if win.JustPressed(pixelgl.KeyUp) {
-		cir.Level += .001
-	}
-	if win.JustPressed(pixelgl.KeyDown) {
-		cir.Level -= .001
-	}
-	if win.JustPressed(pixelgl.KeyRight) {
-		cir.Spacing++
-	}
-	if win.JustPressed(pixelgl.KeyLeft) {
-		cir.Spacing--
-	}
-	if win.Pressed(pixelgl.KeyComma) {
-		cir.Count--
-	}
-	if win.Pressed(pixelgl.KeyPeriod) {
-		cir.Count++
+
+	if cir.devMode {
+		if win.JustPressed(pixelgl.KeyJ) {
+			cir.Posn.X--
+		}
+		if win.JustPressed(pixelgl.KeyL) {
+			cir.Posn.X++
+		}
+		if win.JustPressed(pixelgl.KeyK) {
+			cir.Posn.Y--
+		}
+		if win.JustPressed(pixelgl.KeyI) {
+			cir.Posn.Y++
+		}
+		if win.JustPressed(pixelgl.KeySpace) {
+			cir.Shade = !cir.Shade
+		}
+		if win.JustPressed(pixelgl.KeyF) {
+			cir.Fill = !cir.Fill
+		}
+		if win.JustPressed(pixelgl.KeyUp) {
+			cir.Level += .001
+		}
+		if win.JustPressed(pixelgl.KeyDown) {
+			cir.Level -= .001
+		}
+		if win.JustPressed(pixelgl.KeyRight) {
+			cir.Spacing++
+		}
+		if win.JustPressed(pixelgl.KeyLeft) {
+			cir.Spacing--
+		}
+		if win.Pressed(pixelgl.KeyComma) {
+			cir.Count--
+		}
+		if win.Pressed(pixelgl.KeyPeriod) {
+			cir.Count++
+		}
 	}
 
 	if win.JustPressed(pixelgl.MouseButton1) {
@@ -218,7 +224,8 @@ func (cir *Agent) Disp(win *pixelgl.Window) {
 func (cir *Agent) Light(room *Place) {
 	img := imdraw.New(nil)
 	img.Precision = 32
-	col := (pixel.ToRGBA(colornames.Whitesmoke)).Mul(pixel.Alpha(cir.Level))
+	// col := (pixel.ToRGBA(colornames.Whitesmoke)).Mul(pixel.Alpha(cir.Level))
+	col := (pixel.ToRGBA(colornames.Cornsilk)).Mul(pixel.Alpha(cir.Level))
 	for fade := 1; fade < cir.Count; fade++ {
 		img.Color = col
 		img.Push(cir.Posn)
@@ -253,63 +260,43 @@ func (cir *Agent) Light(room *Place) {
 
 // }
 
-func collision(room *Place, center pixel.Vec, radius float64) (force pixel.Vec) {
-	for _, obst := range room.Blocks {
-
-		for vertexInd := 1; vertexInd < len(obst.Vertices); vertexInd++ {
-			end1 := obst.Vertices[vertexInd]
-			end2 := obst.Vertices[vertexInd-1]
-			segVec := end2.Sub(end1)
-			unitSegVec := segVec.Scaled(1 / magnitude(segVec))
-			centerOffset := center.Sub(end1)
-			projMag := centerOffset.Dot(unitSegVec)
-			projVec := unitSegVec.Scaled(projMag)
-			var closest pixel.Vec
-
-			if projMag < 0 {
-				closest = end1
-			} else if projMag > magnitude(segVec) {
-				closest = end2
-			} else {
-				closest = end1.Add(projVec)
-			}
-
-			dist := center.Sub(closest)
-
-			if magnitude(dist) < (radius + 4) {
-				offset := (dist.Scaled(1 / magnitude(dist))).Scaled((radius + 4) - magnitude(dist))
+// Checks to see if a given position should receive a collision force from a list of obstacles
+func collision(blocks []Obstacle, posn pixel.Vec, radius float64) (force pixel.Vec) {
+	for _, obst := range blocks {
+		vertices := make([]pixel.Vec, 0, 10)
+		vertices = append(vertices, obst.Vertices...)
+		vertices = append(vertices, obst.Vertices[0]) // adding the first element to the end to complete the shape
+		for vertexInd := 1; vertexInd < len(vertices); vertexInd++ {
+			closest := closestPointOnSegment(vertices[vertexInd], vertices[vertexInd-1], posn)
+			dist := posn.Sub(closest)
+			if dist.Len() < (radius + 4) {
+				offset := (dist.Scaled(1 / dist.Len())).Scaled((radius + 4) - dist.Len())
 				offset = offset.Scaled(.30)
 				force = force.Add((offset).Scaled(.88))
 			}
 		}
 
-		end1 := obst.Vertices[0]
-		end2 := obst.Vertices[len(obst.Vertices)-1]
-		segVec := end2.Sub(end1)
-		unitSegVec := segVec.Scaled(1 / magnitude(segVec))
-		centerOffset := center.Sub(end1)
-		projMag := centerOffset.Dot(unitSegVec)
-		projVec := unitSegVec.Scaled(projMag)
-		var closest pixel.Vec
-
-		if projMag < 0 {
-			closest = end1
-		} else if projMag > magnitude(segVec) {
-			closest = end2
-		} else {
-			closest = end1.Add(projVec)
-		}
-
-		dist := center.Sub(closest)
-
-		if magnitude(dist) < (radius + 4) {
-			offset := (dist.Scaled(1 / magnitude(dist))).Scaled((radius + 4) - magnitude(dist))
-			offset = offset.Scaled(.30)
-			force = force.Add((offset).Scaled(.88))
-		}
-
 	}
 	return force
+}
+
+// Returns the point on a line segment closest to a given position. (Either one of the two ends or a point between them)
+func closestPointOnSegment(end1, end2, posn pixel.Vec) (cloestest pixel.Vec) {
+	segVec := end2.Sub(end1)
+	unitSegVec := segVec.Scaled(1 / magnitude(segVec))
+	posnOffset := posn.Sub(end1)
+	projMag := posnOffset.Dot(unitSegVec)
+	projVec := unitSegVec.Scaled(projMag)
+	var closest pixel.Vec
+
+	if projMag < 0 {
+		closest = end1
+	} else if projMag > magnitude(segVec) {
+		closest = end2
+	} else {
+		closest = end1.Add(projVec)
+	}
+	return closest
 }
 
 // Update is an agent method. Runs all necessary per-frame proccedures on agent.
@@ -322,7 +309,7 @@ func (cir *Agent) Update(win *pixelgl.Window, room *Place) {
 	// 	cir.Vel = pixel.ZV
 	// }
 
-	offset := collision(room, cir.Posn, 20)
+	offset := collision(room.Blocks, cir.Posn, 20)
 	cir.Vel = cir.Vel.Add(offset)
 
 	cir.Vel = limitVecMag(cir.Vel.Add(limitVecMag(cir.Acc, 1.5)), 10).Scaled(.88)
@@ -375,7 +362,7 @@ BulletLoop:
 			}
 		}
 		// Does more checks than necesarry in the case that it does collide.
-		if !(room.Rect.Contains(cir.Shots[bulletInd].Posn2)) || (collision(room, cir.Shots[bulletInd].Posn2, 1) != pixel.ZV) {
+		if !(room.Rect.Contains(cir.Shots[bulletInd].Posn2)) || (collision(room.Blocks, cir.Shots[bulletInd].Posn2, 1) != pixel.ZV) {
 			cir.Shots[bulletInd] = cir.Shots[len(cir.Shots)-1]
 			cir.Shots = cir.Shots[:len(cir.Shots)-1]
 			bulletInd--
