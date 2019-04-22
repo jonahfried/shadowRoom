@@ -174,6 +174,15 @@ func (monster *Creature) Disp(win *pixelgl.Canvas) {
 	monster.Img.Color = colornames.Darkolivegreen
 }
 
+func updateMonsters(monstersPoint *[]Creature, room *Place, cir *Agent) {
+	monsters := *monstersPoint
+	for monsterInd := range monsters {
+		monsterTarget := AStar(room.GridRepresentation, monsters[monsterInd].Posn, cir.Posn, cir)
+		cir.Monsters[monsterInd].Update(*room, cir, monsterTarget, monsters)
+		cir.Monsters[monsterInd].Disp(room.Target)
+	}
+}
+
 // // a runner is a kind of monster that "leaps" at a target after some time "tracking" them
 // type runner struct {
 // 	Posn, Vel                  pixel.Vec
