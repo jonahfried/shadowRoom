@@ -17,6 +17,15 @@ import (
 	"github.com/faiface/pixel/text"
 )
 
+// LEVEL is the light level for player torch (to be removed)
+const LEVEL = .02
+
+// SPACING is the dist between layers of the torch light
+const SPACING = 6
+
+// COUNT is the number of layers of light
+const COUNT = 88
+
 // Acting main function
 func run(win *pixelgl.Window, devMode, noSpawns bool) pixel.Vec {
 	var cir = MakeAgent(0, 0, win, devMode) // player
@@ -70,7 +79,7 @@ func run(win *pixelgl.Window, devMode, noSpawns bool) pixel.Vec {
 		win.SetMatrix(cir.Cam.Matrix)
 
 		room.Target.Clear(pixel.Alpha(0))
-		cir.Light(&room)
+		cir.playerTorch(LEVEL, COUNT, SPACING, &room)
 		room.Disp()
 
 		updateMonsters(&cir.Monsters, &room, &cir)

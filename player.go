@@ -17,10 +17,10 @@ type Agent struct {
 	Shade bool
 	Fill  bool
 
-	// Dev Tools
-	Level   float64
-	Spacing int
-	Count   int
+	// //  Dev Tools
+	// Level   float64
+	// Spacing int
+	// Count   int
 	devMode bool
 
 	Cam Camera
@@ -47,9 +47,9 @@ func MakeAgent(x, y float64, win *pixelgl.Window, devMode bool) (cir Agent) {
 
 	cir.Cam = MakeCamera(cir.Posn, win)
 
-	cir.Level = 0.02
-	cir.Spacing = 6
-	cir.Count = 88
+	// cir.Level = 0.02
+	// cir.Spacing = 6
+	// cir.Count = 88
 	cir.devMode = devMode
 
 	cir.Health = 100
@@ -102,30 +102,6 @@ func (cir *Agent) Disp(win *pixelgl.Window) {
 // 	// cir.Sprite.Draw(room.Target, pixel.IM.Moved(cir.Posn))
 // 	// room.Target.SetComposeMethod(pixel.ComposeIn)
 // }
-
-// Light adds fading light (white circles) around an Agent's posn
-func (cir *Agent) Light(room *Place) {
-	room.Target.SetComposeMethod(pixel.ComposeOver)
-	img := imdraw.New(nil)
-	img.Precision = 32
-	// col := (pixel.ToRGBA(colornames.Whitesmoke)).Mul(pixel.Alpha(cir.Level))
-	col := (pixel.ToRGBA(colornames.Cornsilk)).Mul(pixel.Alpha(cir.Level))
-	for fade := 1; fade < cir.Count; fade++ {
-		img.Color = col
-		img.Push(cir.Posn)
-		img.Circle(float64(fade*cir.Spacing), 0)
-		// col = col.Mul(pixel.Alpha(1 / float64(fade)))
-		// col = (pixel.ToRGBA(colornames.Whitesmoke)).Mul(pixel.Alpha(.8 / (float64(fade))))
-		// col = col.Mul(pixel.Alpha(.95))
-
-	}
-
-	// room.Target.Clear(pixel.Alpha(0))
-	// room.Target.SetComposeMethod()
-	img.Draw(room.Target)
-	room.Target.SetComposeMethod(pixel.ComposeIn)
-
-}
 
 // Checks to see if a given position should receive a collision force from a list of obstacles
 func collision(blocks []Obstacle, posn pixel.Vec, radius float64) (force pixel.Vec) {

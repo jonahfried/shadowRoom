@@ -84,24 +84,6 @@ func (cir *Agent) PressHandler(win *pixelgl.Window) {
 		if win.JustPressed(pixelgl.KeyF) {
 			cir.Fill = !cir.Fill
 		}
-		if win.JustPressed(pixelgl.KeyUp) {
-			cir.Level += .001
-		}
-		if win.JustPressed(pixelgl.KeyDown) {
-			cir.Level -= .001
-		}
-		if win.JustPressed(pixelgl.KeyRight) {
-			cir.Spacing++
-		}
-		if win.JustPressed(pixelgl.KeyLeft) {
-			cir.Spacing--
-		}
-		if win.Pressed(pixelgl.KeyComma) {
-			cir.Count--
-		}
-		if win.Pressed(pixelgl.KeyPeriod) {
-			cir.Count++
-		}
 	}
 
 	if win.JustPressed(pixelgl.MouseButton1) {

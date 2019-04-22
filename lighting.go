@@ -6,6 +6,7 @@ import (
 
 	"github.com/faiface/pixel"
 	"github.com/faiface/pixel/imdraw"
+	"golang.org/x/image/colornames"
 )
 
 func illuminate(room Place, cir Agent, point *imdraw.IMDraw) {
@@ -91,4 +92,20 @@ func shadePointsByViewMode(vecs []pixel.Vec, point *imdraw.IMDraw, cir Agent) {
 			point.Polygon(1)
 		}
 	}
+}
+
+// playerTorch adds fading light (white circles) around an Agent's posn
+func (p *Agent) playerTorch(level float64, count, spacing int, room *Place) {
+	room.Target.SetComposeMethod(pixel.ComposeOver)
+	img := imdraw.New(nil)
+	img.Precision = 32
+	col := (pixel.ToRGBA(colornames.Cornsilk)).Mul(pixel.Alpha(level)) // (pixel.ToRGBA(colornames.Whitesmoke)).Mul(pixel.Alpha(cir.Level))
+	for fade := 1; fade < count; fade++ {
+		img.Color = col
+		img.Push(p.Posn)
+		img.Circle(float64(fade*spacing), 0)
+	}
+	img.Draw(room.Target)
+	room.Target.SetComposeMethod(pixel.ComposeIn)
+
 }
