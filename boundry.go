@@ -85,7 +85,6 @@ func (room *Place) presentBoost() {
 // Disp updates and displays a room's Img
 func (room *Place) Disp() {
 	room.DispBoost()
-	// room.Target.SetComposeMethod(pixel.ComposeIn)
 	room.Img.Clear()
 	room.Img.Color = colornames.Burlywood
 	room.Img.Push(room.Rect.Center().Sub(room.Rect.Size().Scaled(.5)))
@@ -93,16 +92,10 @@ func (room *Place) Disp() {
 	room.Img.Rectangle(3)
 	room.Img.Draw(room.Target)
 
-	// bcImg := imdraw.New(nil)
-	// bcImg.Color = colornames.Black
 	for _, bc := range room.Blocks {
 		bc.Img.Draw(room.Target)
-		// bcImg.Push(bc.Center)
-		// bcImg.Circle(bc.Radius, 0)
 	}
 
-	// room.Target.SetComposeMethod(pixel.ComposeOver)
-	// bcImg.Draw(room.Target)
 }
 
 // DispBoost draws the boost to the room's target, if present.

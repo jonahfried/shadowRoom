@@ -222,6 +222,7 @@ func (cir *Agent) Disp(win *pixelgl.Window) {
 
 // Light adds fading light (white circles) around an Agent's posn
 func (cir *Agent) Light(room *Place) {
+	room.Target.SetComposeMethod(pixel.ComposeOver)
 	img := imdraw.New(nil)
 	img.Precision = 32
 	// col := (pixel.ToRGBA(colornames.Whitesmoke)).Mul(pixel.Alpha(cir.Level))
@@ -239,6 +240,7 @@ func (cir *Agent) Light(room *Place) {
 	// room.Target.Clear(pixel.Alpha(0))
 	// room.Target.SetComposeMethod()
 	img.Draw(room.Target)
+	room.Target.SetComposeMethod(pixel.ComposeIn)
 
 }
 
