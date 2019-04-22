@@ -76,13 +76,12 @@ func run(win *pixelgl.Window, devMode, noSpawns bool) pixel.Vec {
 		updateMonsters(&cir.Monsters, &room, &cir)
 
 		cir.DispShots(room.Target)
-
-		// room.Disp()
-
 		room.Target.Draw(win, pixel.IM) //.Moved(win.Bounds().Center()))
+
 		if devMode {
 			fpsDisp(frames/seconds, cir.Posn, win)
 		}
+
 		cir.Disp(win)
 		illuminate(room, cir, point)
 		point.Draw(win)
