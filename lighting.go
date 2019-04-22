@@ -9,7 +9,7 @@ import (
 	"golang.org/x/image/colornames"
 )
 
-func illuminate(room Place, cir Agent, point *imdraw.IMDraw) {
+func illuminate(room *Place, cir *Agent, point *imdraw.IMDraw) {
 	point.Clear()
 	var anglesToCheck []float64
 	var shadedRoomCorners []pixel.Vec
@@ -17,11 +17,11 @@ func illuminate(room Place, cir Agent, point *imdraw.IMDraw) {
 
 	for _, block := range room.Blocks {
 		getAnglesToCheck(&anglesToCheck, block, cir.Posn)
-		getShadedRoomCorners(&shadedRoomCorners, room, block, cir.Posn)
-		getObstructedPoints(&obstructedPoints, anglesToCheck, room, block, cir.Posn)
+		getShadedRoomCorners(&shadedRoomCorners, *room, block, cir.Posn)
+		getObstructedPoints(&obstructedPoints, anglesToCheck, *room, block, cir.Posn)
 
-		shadePointsByViewMode(obstructedPoints, point, cir)
-		shadeObstructedPointsToCorners(obstructedPoints, shadedRoomCorners, point, cir)
+		shadePointsByViewMode(obstructedPoints, point, *cir)
+		shadeObstructedPointsToCorners(obstructedPoints, shadedRoomCorners, point, *cir)
 
 	}
 }

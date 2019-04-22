@@ -17,23 +17,9 @@ import (
 	"github.com/faiface/pixel/text"
 )
 
-// LEVEL is the light level for player torch (to be removed)
-const LEVEL = .02
-
-// SPACING is the dist between layers of the torch light
-const SPACING = 6
-
-// COUNT is the number of layers of light
-const COUNT = 88
-
 // Acting main function
 func run(win *pixelgl.Window, devMode, noSpawns bool) pixel.Vec {
-	var cir = MakeAgent(0, 0, win, devMode) // player
-
-	// TODO: Make room bounds relative to Bounds
-	room := MakePlace(pixel.R(-700, -600, 700, 600), 11)
-	room.Target.SetMatrix(pixel.IM.Moved(room.Target.Bounds().Center())) //Move this out of loop?
-	room.ToGrid(40)
+	game := makeGame(win, devMode)
 
 	point := imdraw.New(nil)
 	point.Color = colornames.Black
@@ -46,7 +32,7 @@ func run(win *pixelgl.Window, devMode, noSpawns bool) pixel.Vec {
 	frames := 0.0
 	seconds := 0.0
 	// Main Draw Loop:
-	for !win.Closed() && cir.Health > 0 {
+	for !win.Closed() && game.Player.Health > 0 {
 		dt := time.Since(last).Seconds()
 		last = time.Now()
 		seconds += dt
@@ -61,44 +47,44 @@ func run(win *pixelgl.Window, devMode, noSpawns bool) pixel.Vec {
 
 		case <-fiveSec:
 			if !noSpawns {
-				cir.Monsters = append(cir.Monsters, MakeCreature(&room, &cir))
+				game.Player.Monsters = append(game.Player.Monsters, MakeCreature(game.Room, game.Player))
 			}
 		case <-thirtySec:
-			room.presentBoost()
+			game.Room.presentBoost()
 
 		}
 
 		win.Clear(colornames.Black)
-		room.Disp()
+		game.Room.Disp()
 
-		cir.Update(win, &room)
+		game.Player.Update(win, game.Room)
 
-		cir.Cam.Attract(cir.Posn)
-		cir.Cam.Matrix = pixel.IM.Moved(win.Bounds().Center().Sub(cir.Cam.Posn))
+		game.Player.Cam.Attract(game.Player.Posn)
+		game.Player.Cam.Matrix = pixel.IM.Moved(win.Bounds().Center().Sub(game.Player.Cam.Posn))
 
-		win.SetMatrix(cir.Cam.Matrix)
+		win.SetMatrix(game.Player.Cam.Matrix)
 
-		room.Target.Clear(pixel.Alpha(0))
-		cir.playerTorch(LEVEL, COUNT, SPACING, &room)
-		room.Disp()
+		game.Room.Target.Clear(pixel.Alpha(0))
+		game.Player.playerTorch(game.Level, game.Count, game.Spacing, game.Room)
+		game.Room.Disp()
 
-		updateMonsters(&cir.Monsters, &room, &cir)
+		updateMonsters(&game.Player.Monsters, game.Room, game.Player)
 
-		cir.DispShots(room.Target)
-		room.Target.Draw(win, pixel.IM) //.Moved(win.Bounds().Center()))
+		game.Player.DispShots(game.Room.Target)
+		game.Room.Target.Draw(win, pixel.IM) //.Moved(win.Bounds().Center()))
 
 		if devMode {
-			fpsDisp(frames/seconds, cir.Posn, win)
+			fpsDisp(frames/seconds, game.Player.Posn, win)
 		}
 
-		cir.Disp(win)
-		illuminate(room, cir, point)
+		game.Player.Disp(win)
+		illuminate(game.Room, game.Player, point)
 		point.Draw(win)
 
 		win.Update()
 		// time.Sleep(1 / 2 * time.Second)
 	}
-	return cir.Posn
+	return game.Player.Posn
 }
 
 func fpsDisp(fps float64, posn pixel.Vec, win *pixelgl.Window) {
