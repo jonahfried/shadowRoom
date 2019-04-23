@@ -123,7 +123,8 @@ func (grid *Grid) tileDist(ind1, ind2 int) float64 {
 }
 
 // AStar uses a* pathfinding to go between grid's start and goal posns
-func AStar(grid Grid, startPosn, goal pixel.Vec, cir *Agent) pixel.Vec {
+func (game *Game) AStar(startPosn, goal pixel.Vec) pixel.Vec {
+	grid := game.Room.GridRepresentation
 
 	tileGrid := make([]Tile, len(grid.GridMap))
 	copy(tileGrid, grid.GridMap)
@@ -146,7 +147,7 @@ func AStar(grid Grid, startPosn, goal pixel.Vec, cir *Agent) pixel.Vec {
 	goalYInd := int(math.Floor(shiftedGoal.Y / grid.TileSize.Y))
 	goalIndex := (goalYInd * grid.TilesPerRow) + goalXInd
 
-	for _, blob := range cir.Monsters {
+	for _, blob := range game.Monsters {
 		if blob.Posn != startPosn {
 			shiftedBlob := blob.Posn.Sub(min)
 			blobXInd := int(math.Ceil(shiftedBlob.X / float64(grid.TilesPerRow)))

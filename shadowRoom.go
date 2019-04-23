@@ -47,17 +47,19 @@ func run(win *pixelgl.Window, devMode, noSpawns bool) pixel.Vec {
 
 		case <-fiveSec:
 			if !noSpawns {
-				game.Player.Monsters = append(game.Player.Monsters, MakeCreature(game.Room, game.Player))
+				game.Monsters = append(game.Monsters, MakeCreature(&game.Room, &game.Player))
 			}
 		case <-thirtySec:
 			game.Room.presentBoost()
 
 		}
+		PressHandler(win, &game)
+		ReleaseHandler(win, &game)
 
 		win.Clear(colornames.Black)
 		game.Room.Disp()
 
-		game.Player.Update(win, game.Room)
+		game.Player.playerKinamatics(&game.Room)
 
 		game.Player.Cam.Attract(game.Player.Posn)
 		game.Player.Cam.Matrix = pixel.IM.Moved(win.Bounds().Center().Sub(game.Player.Cam.Posn))
@@ -65,12 +67,13 @@ func run(win *pixelgl.Window, devMode, noSpawns bool) pixel.Vec {
 		win.SetMatrix(game.Player.Cam.Matrix)
 
 		game.Room.Target.Clear(pixel.Alpha(0))
-		game.Player.playerTorch(game.Level, game.Count, game.Spacing, game.Room)
+		game.Player.playerTorch(game.Level, game.Count, game.Spacing, &game.Room)
 		game.Room.Disp()
 
-		updateMonsters(&game.Player.Monsters, game.Room, game.Player)
+		game.updateMonsters()
 
-		game.Player.DispShots(game.Room.Target)
+		game.updateShots()
+		game.DispShots(game.Room.Target)
 		game.Room.Target.Draw(win, pixel.IM) //.Moved(win.Bounds().Center()))
 
 		if devMode {

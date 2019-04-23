@@ -9,7 +9,7 @@ import (
 	"golang.org/x/image/colornames"
 )
 
-func illuminate(room *Place, cir *Agent, point *imdraw.IMDraw) {
+func illuminate(room Place, cir Agent, point *imdraw.IMDraw) {
 	point.Clear()
 	var anglesToCheck []float64
 	var shadedRoomCorners []pixel.Vec
@@ -17,11 +17,11 @@ func illuminate(room *Place, cir *Agent, point *imdraw.IMDraw) {
 
 	for _, block := range room.Blocks {
 		getAnglesToCheck(&anglesToCheck, block, cir.Posn)
-		getShadedRoomCorners(&shadedRoomCorners, *room, block, cir.Posn)
-		getObstructedPoints(&obstructedPoints, anglesToCheck, *room, block, cir.Posn)
+		getShadedRoomCorners(&shadedRoomCorners, room, block, cir.Posn)
+		getObstructedPoints(&obstructedPoints, anglesToCheck, room, block, cir.Posn)
 
-		shadePointsByViewMode(obstructedPoints, point, *cir)
-		shadeObstructedPointsToCorners(obstructedPoints, shadedRoomCorners, point, *cir)
+		shadePointsByViewMode(obstructedPoints, point, cir)
+		shadeObstructedPointsToCorners(obstructedPoints, shadedRoomCorners, point, cir)
 
 	}
 }
@@ -81,17 +81,8 @@ func shadeObstructedPointsToCorners(obstructedPoints, shadedRoomCorners []pixel.
 func shadePointsByViewMode(vecs []pixel.Vec, point *imdraw.IMDraw, cir Agent) {
 	for _, vec := range vecs {
 		point.Push(vec)
-		if !cir.Shade {
-			point.Circle(4, 0)
-		}
 	}
-	if cir.Shade {
-		if cir.Fill {
-			point.Polygon(0)
-		} else {
-			point.Polygon(1)
-		}
-	}
+	point.Polygon(0)
 }
 
 // playerTorch adds fading light (white circles) around an Agent's posn
