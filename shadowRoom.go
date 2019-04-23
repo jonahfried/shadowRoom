@@ -12,7 +12,6 @@ import (
 	"golang.org/x/image/font/basicfont"
 
 	"github.com/faiface/pixel"
-	"github.com/faiface/pixel/imdraw"
 	"github.com/faiface/pixel/pixelgl"
 	"github.com/faiface/pixel/text"
 )
@@ -20,9 +19,6 @@ import (
 // Acting main function
 func run(win *pixelgl.Window, devMode, noSpawns bool) pixel.Vec {
 	game := makeGame(win, devMode)
-
-	point := imdraw.New(nil)
-	point.Color = colornames.Black
 
 	frameRate := time.Tick(time.Millisecond * 17)
 	fiveSec := time.Tick(time.Second * 5)
@@ -81,8 +77,7 @@ func run(win *pixelgl.Window, devMode, noSpawns bool) pixel.Vec {
 		}
 
 		game.Player.Disp(win)
-		illuminate(game.Room, game.Player, point)
-		point.Draw(win)
+		illuminate(game.Room, game.Player, win)
 
 		win.Update()
 		// time.Sleep(1 / 2 * time.Second)
