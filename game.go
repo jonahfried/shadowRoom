@@ -25,7 +25,7 @@ func (g Game) getRoom() Place {
 }
 
 func makeGame(win *pixelgl.Window, devMode bool) (g Game) {
-	var p = MakeAgent(0, 0, win, devMode) // player
+	var p = MakeAgent(0, 0, win) // player
 
 	// TODO: Make room bounds relative to Bounds
 	room := MakePlace(pixel.R(-700, -600, 700, 600), 11)

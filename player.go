@@ -25,7 +25,7 @@ type Agent struct {
 }
 
 // MakeAgent creates a new agent starting at a given (x, y) coordinate
-func MakeAgent(x, y float64, win *pixelgl.Window, devMode bool) (cir Agent) {
+func MakeAgent(x, y float64, win *pixelgl.Window) (cir Agent) {
 	cir.Posn = pixel.V(x, y)
 	cir.Vel = pixel.ZV
 	cir.Acc = pixel.ZV
