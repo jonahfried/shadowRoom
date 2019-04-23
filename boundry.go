@@ -24,14 +24,6 @@ type Place struct {
 	Target *pixelgl.Canvas
 }
 
-// Boost to give bonus to the player
-type Boost struct {
-	Posn    pixel.Vec
-	Present bool
-
-	Img *imdraw.IMDraw
-}
-
 // MakePlace turns specifications of a place, (rectangle and the Obstacles it contains)
 // and returns a Place
 func MakePlace(rect pixel.Rect, numBlocks int, blocks ...Obstacle) (room Place) {
@@ -70,15 +62,6 @@ func MakePlace(rect pixel.Rect, numBlocks int, blocks ...Obstacle) (room Place) 
 	room.Target = pixelgl.NewCanvas(rect)
 	room.Img = imdraw.New(nil)
 	return room
-}
-
-func (room *Place) presentBoost() {
-	if !room.Booster.Present {
-		room.Booster.Posn = pixel.V(room.Rect.Center().X+(room.Rect.W()/2*(rand.Float64()-rand.Float64())/2), room.Rect.Center().Y+room.Rect.H()*(rand.Float64()-rand.Float64())/2)
-		room.Booster.Present = true
-	} else {
-		room.Booster.Present = false
-	}
 }
 
 // Obstacle is a data structure defining a boundry inside a room

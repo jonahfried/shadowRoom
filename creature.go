@@ -6,7 +6,6 @@ import (
 
 	"github.com/faiface/pixel"
 	"github.com/faiface/pixel/imdraw"
-	"github.com/faiface/pixel/pixelgl"
 	"golang.org/x/image/colornames"
 )
 
@@ -165,21 +164,11 @@ func (monster *Creature) Update(room Place, cir *Agent, target pixel.Vec, monste
 	monster.Posn.Y = math.Max(monster.Posn.Y, room.Rect.Min.Y+20)
 }
 
-// Disp draws a creature based on its Img
-func (monster *Creature) Disp(win *pixelgl.Canvas) {
-	monster.Img.Clear()
-	monster.Img.Push(monster.Posn)
-	monster.Img.Circle(20, 0)
-	monster.Img.Draw(win)
-	monster.Img.Color = colornames.Darkolivegreen
-}
-
-func updateMonsters(monstersPoint *[]Creature, room *Place, cir *Agent) {
-	monsters := *monstersPoint
-	for monsterInd := range monsters {
-		monsterTarget := AStar(room.GridRepresentation, monsters[monsterInd].Posn, cir.Posn, cir)
-		cir.Monsters[monsterInd].Update(*room, cir, monsterTarget, monsters)
-		cir.Monsters[monsterInd].Disp(room.Target)
+func (game *Game) updateMonsters() {
+	for monsterInd := range game.Monsters {
+		monsterTarget := game.AStar(game.Monsters[monsterInd].Posn, game.Player.Posn)
+		game.Monsters[monsterInd].Update(game.Room, &game.Player, monsterTarget, game.Monsters)
+		game.Monsters[monsterInd].Disp(game.Room.Target)
 	}
 }
 
