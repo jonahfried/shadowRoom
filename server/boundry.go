@@ -5,9 +5,6 @@ import (
 	"math/rand"
 
 	"github.com/faiface/pixel"
-	"github.com/faiface/pixel/imdraw"
-	"github.com/faiface/pixel/pixelgl"
-	"golang.org/x/image/colornames"
 )
 
 // Place is datastructure that holds a rectangle for its bounds
@@ -17,11 +14,8 @@ type Place struct {
 	Rect               pixel.Rect
 	Blocks             []Obstacle
 	Vertices           []pixel.Vec
-	GridRepresentation Grid
+	gridRepresentation Grid
 	Booster            Boost
-
-	Img    *imdraw.IMDraw
-	Target *pixelgl.Canvas
 }
 
 // MakePlace turns specifications of a place, (rectangle and the Obstacles it contains)
@@ -55,12 +49,8 @@ func MakePlace(rect pixel.Rect, numBlocks int, blocks ...Obstacle) (room Place) 
 
 	room.Booster.Present = false
 	room.Booster.Posn = pixel.V(100, 100)
-	room.Booster.Img = imdraw.New(nil)
-	room.Booster.Img.Color = colornames.Royalblue
 	// room.Booster.Img.Precision = 32
 
-	room.Target = pixelgl.NewCanvas(rect)
-	room.Img = imdraw.New(nil)
 	return room
 }
 
@@ -73,8 +63,6 @@ type Obstacle struct {
 	Vertices []pixel.Vec
 	Center   pixel.Vec
 	Radius   float64
-
-	Img *imdraw.IMDraw
 }
 
 // MakeObstacle takes in a list of vertices that define its boundries,
@@ -84,15 +72,6 @@ func MakeObstacle(vertices []pixel.Vec, center pixel.Vec, radius float64) (obst 
 	obst.Vertices = vertices
 	obst.Center = center
 	obst.Radius = radius
-
-	obst.Img = imdraw.New(nil)
-	obst.Img.EndShape = 1
-
-	obst.Img.Color = colornames.Burlywood
-	for _, vert := range obst.Vertices {
-		obst.Img.Push(vert)
-	}
-	obst.Img.Polygon(8)
 
 	return obst
 }

@@ -2,7 +2,6 @@ package main
 
 import (
 	"github.com/faiface/pixel"
-	"golang.org/x/image/colornames"
 )
 
 // A Game represents the current game in progress.
@@ -28,13 +27,12 @@ func makeGame(devMode bool) (g Game) {
 
 	// TODO: Make room bounds relative to Bounds
 	room := MakePlace(pixel.R(-700, -600, 700, 600), 11)
-	room.Target.SetMatrix(pixel.IM.Moved(room.Target.Bounds().Center())) //Move this out of loop?
 	room.ToGrid(40)
 	g.Player = p
 	g.Room = room
 
-	g.Shots = make([]Shot, 0)
-	g.Monsters = make([]Creature, 0)
+	// g.Shots = make([]Shot, 0)
+	// g.Monsters = make([]Creature, 0)
 
 	g.DevMode = devMode
 	g.Level = .02
@@ -61,7 +59,6 @@ BulletLoop:
 		for monsterInd := range g.Monsters {
 			if vecDist(g.Shots[bulletInd].Posn2, g.Monsters[monsterInd].Posn) < 20 {
 				g.Monsters[monsterInd].Health--
-				g.Monsters[monsterInd].Img.Color = colornames.Red
 				g.Shots[bulletInd] = g.Shots[len(g.Shots)-1]
 				g.Shots = g.Shots[:len(g.Shots)-1]
 				bulletInd--

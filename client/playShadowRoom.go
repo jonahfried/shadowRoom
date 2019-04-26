@@ -5,59 +5,64 @@ import (
 	"log"
 	"time"
 
-	"github.com/faiface/pixel/imdraw"
-
 	"github.com/faiface/pixel"
 	"github.com/faiface/pixel/pixelgl"
 	"golang.org/x/image/colornames"
 	"golang.org/x/net/websocket"
 )
 
-func listen(receiver chan pixel.Vec, ws *websocket.Conn) {
-	var v pixel.Vec
-	err := websocket.JSON.Receive(ws, &v)
-	// fmt.Println("this is the new vec: ", v)
+func listen(receiver chan Game, ws *websocket.Conn) {
+	var g Game
+	err := websocket.JSON.Receive(ws, &g)
 	for err == nil {
-		receiver <- v
-		err = websocket.JSON.Receive(ws, &v)
+		receiver <- g
+		err = websocket.JSON.Receive(ws, &g)
 	}
 }
 
-func run() {
-	win := getWindow()
+func initializeConn() *websocket.Conn {
 	origin := "http://localhost/"
 	url := "ws://localhost:1234/"
 	ws, err := websocket.Dial(url, "", origin)
 	if err != nil {
 		log.Fatal(err)
 	}
-	v := pixel.V(300, 50)
-	im := imdraw.New(nil)
-	im.Color = colornames.Purple
+	return ws
+}
 
-	receiver := make(chan pixel.Vec)
+func run() {
+	win := getWindow()
+	ws := initializeConn()
+	game := makeGame(win, false)
+
+	receiver := make(chan Game, 10)
 	go listen(receiver, ws)
 	tick := time.Tick(20 * time.Millisecond)
 
 	for !win.Closed() {
-		// fmt.Println(v)
 		select {
-		case v = <-receiver:
-			// fmt.Println("received", v)
+		case newGameState := <-receiver:
+			game.Player.Posn = newGameState.Player.Posn
+			game.Player.Vel = newGameState.Player.Vel
+			fmt.Println(newGameState)
 		case <-tick:
 		}
+		PressHandler(win, ws)
+		// ReleaseHandler(win, ws)
+		game.Player.playerKinamatics(&game.Room)
+		game.Player.Cam.Attract(game.Player.Posn)
+		game.Player.Cam.Matrix = pixel.IM.Moved(win.Bounds().Center().Sub(game.Player.Cam.Posn))
+		win.SetMatrix(game.Player.Cam.Matrix)
 
-		win.Clear(colornames.Whitesmoke)
-		im.Clear()
-
-		im.Push(v)
-		im.Circle(20, 0)
-		im.Draw(win)
-
-		if win.JustPressed(pixelgl.KeySpace) {
-			websocket.JSON.Send(ws, "SENDIND TO SERVER")
-			fmt.Println("SENDING TO SERVER")
-		}
+		win.Clear(colornames.Black)
+		game.Room.Disp()
+		game.Room.Target.Clear(pixel.Alpha(0))
+		game.Player.playerTorch(game.Level, game.Count, game.Spacing, &game.Room)
+		game.Room.Disp()
+		game.DispShots(game.Room.Target)
+		game.Room.Target.Draw(win, pixel.IM)
+		game.Player.Disp(win)
+		illuminate(game.Room, game.Player, win)
 
 		win.Update()
 	}

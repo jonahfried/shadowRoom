@@ -100,7 +100,7 @@ func (room *Place) ToGrid(grain int) {
 	// img.Draw(grid.Room.Target)
 
 	// return grid
-	room.GridRepresentation = grid
+	room.gridRepresentation = grid
 }
 
 func traceBack(gridMap *[]Tile, traceInd int, goal pixel.Vec) pixel.Vec {
@@ -124,7 +124,7 @@ func (grid *Grid) tileDist(ind1, ind2 int) float64 {
 
 // AStar uses a* pathfinding to go between grid's start and goal posns
 func (game *Game) AStar(startPosn, goal pixel.Vec) pixel.Vec {
-	grid := game.Room.GridRepresentation
+	grid := game.Room.gridRepresentation
 
 	tileGrid := make([]Tile, len(grid.GridMap))
 	copy(tileGrid, grid.GridMap)

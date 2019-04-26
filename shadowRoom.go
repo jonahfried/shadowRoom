@@ -59,7 +59,6 @@ func run(win *pixelgl.Window, devMode, noSpawns bool) pixel.Vec {
 
 		game.Player.Cam.Attract(game.Player.Posn)
 		game.Player.Cam.Matrix = pixel.IM.Moved(win.Bounds().Center().Sub(game.Player.Cam.Posn))
-
 		win.SetMatrix(game.Player.Cam.Matrix)
 
 		game.Room.Target.Clear(pixel.Alpha(0))

@@ -5,8 +5,6 @@ import (
 	"math/rand"
 
 	"github.com/faiface/pixel"
-	"github.com/faiface/pixel/imdraw"
-	"golang.org/x/image/colornames"
 )
 
 // Creature is a struct containing information on its
@@ -16,8 +14,6 @@ import (
 type Creature struct {
 	Posn, Vel pixel.Vec
 	Health    int
-
-	Img *imdraw.IMDraw
 }
 
 // MakeCreature takes a starting x and y (float64), and returns a *Creature
@@ -47,8 +43,6 @@ TryLoop:
 	monster.Vel = pixel.V(0, 0)
 
 	monster.Health = 5
-	monster.Img = imdraw.New(nil)
-	monster.Img.Color = colornames.Darkolivegreen
 
 	return monster
 }
@@ -141,7 +135,6 @@ func (monster *Creature) Update(room Place, cir *Agent, target pixel.Vec, monste
 		changeBy := (40 - magnitude(playerDist)) / 2
 		monster.Vel = monster.Vel.Sub(playerDist.Scaled(2 * changeBy / magnitude(playerDist)))
 		cir.Vel = cir.Vel.Add(playerDist.Scaled(changeBy / magnitude(playerDist)))
-		cir.Img.Color = colornames.Red
 		cir.Health--
 		// monsters[blobInd].Posn = monsters[blobInd].Posn.Sub(dist)
 	}
@@ -168,7 +161,6 @@ func (game *Game) updateMonsters() {
 	for monsterInd := range game.Monsters {
 		monsterTarget := game.AStar(game.Monsters[monsterInd].Posn, game.Player.Posn)
 		game.Monsters[monsterInd].Update(game.Room, &game.Player, monsterTarget, game.Monsters)
-		game.Monsters[monsterInd].Disp(game.Room.Target)
 	}
 }
 

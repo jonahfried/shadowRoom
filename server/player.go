@@ -4,7 +4,6 @@ import (
 	"math"
 
 	"github.com/faiface/pixel"
-	"github.com/faiface/pixel/imdraw"
 	"golang.org/x/image/colornames"
 )
 
@@ -17,8 +16,6 @@ type Agent struct {
 
 	GunType int
 	Bullets int
-
-	Img *imdraw.IMDraw
 }
 
 // MakeAgent creates a new agent starting at a given (x, y) coordinate
@@ -31,8 +28,6 @@ func MakeAgent(x, y float64) (cir Agent) {
 
 	cir.GunType = 1
 	cir.Bullets = 0
-	cir.Img = imdraw.New(nil)
-	cir.Img.Color = colornames.Purple
 
 	return cir
 }

@@ -4,7 +4,6 @@ import (
 	"math/rand"
 
 	"github.com/faiface/pixel"
-	"github.com/faiface/pixel/imdraw"
 )
 
 // A PowerUp represents any type that gives some sort of bonus to the player
@@ -21,8 +20,6 @@ type PowerUp interface {
 type Boost struct {
 	Posn    pixel.Vec
 	Present bool
-
-	Img *imdraw.IMDraw
 }
 
 func (room *Place) presentBoost() {
