@@ -65,7 +65,9 @@ func PressHandler(win *pixelgl.Window, game *Game) {
 		game.Player.Acc = game.Player.Acc.Add(pixel.V(0, 5))
 	}
 	if win.Pressed(pixelgl.Key2) {
-		game.Player.GunType = SHOTGUN
+		if game.Player.Bullets[SHOTGUN] > 0 {
+			game.Player.GunType = SHOTGUN
+		}
 	}
 	if win.Pressed(pixelgl.Key1) {
 		game.Player.GunType = 1
