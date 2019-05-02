@@ -154,7 +154,6 @@ func (game *Game) updateMonsters() {
 	for monsterInd := range game.Monsters {
 		monsterTarget := game.AStar(game.Monsters[monsterInd].Posn, game.Player.Posn)
 		game.Monsters[monsterInd].Update(game.Room, &game.Player, monsterTarget, game.Monsters)
-		game.Monsters[monsterInd].Disp(game.Room.Target)
 	}
 }
 

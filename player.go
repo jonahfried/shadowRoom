@@ -13,13 +13,14 @@ import (
 // Used to keep all information for the movable image together.
 type Agent struct {
 	Posn, Vel, Acc pixel.Vec
+	Radius         float64
 
 	Cam Camera
 
 	Health int
 
 	GunType int
-	Bullets int
+	Bullets map[int]int
 
 	Img *imdraw.IMDraw
 }
@@ -29,13 +30,14 @@ func MakeAgent(x, y float64, win *pixelgl.Window) (cir Agent) {
 	cir.Posn = pixel.V(x, y)
 	cir.Vel = pixel.ZV
 	cir.Acc = pixel.ZV
+	cir.Radius = 20
 
 	cir.Cam = MakeCamera(cir.Posn, win)
 
 	cir.Health = 100
 
 	cir.GunType = 1
-	cir.Bullets = 0
+	cir.Bullets = make(map[int]int)
 	cir.Img = imdraw.New(nil)
 	cir.Img.Color = colornames.Purple
 
@@ -111,9 +113,9 @@ func (cir *Agent) playerKinamatics(room *Place) {
 	cir.Posn.Y = math.Max(cir.Posn.Y-20, room.Rect.Min.Y) + 20
 	cir.Posn.Y = math.Min(cir.Posn.Y+20, room.Rect.Max.Y) - 20
 
-	if vecDist(room.Booster.Posn, cir.Posn) < 30 && room.Booster.Present {
-		room.Booster.Present = false
-		cir.Bullets += 10
-		cir.GunType = 2
-	}
+	// if vecDist(room.Booster.Posn, cir.Posn) < 30 && room.Booster.Present {
+	// 	room.Booster.Present = false
+	// 	cir.Bullets += 10
+	// 	cir.GunType = 2
+	// }
 }

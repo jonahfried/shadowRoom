@@ -50,7 +50,7 @@ func run(win *pixelgl.Window, devMode, noSpawns bool) pixel.Vec {
 				game.Monsters = append(game.Monsters, MakeCreature(&game.Room, &game.Player))
 			}
 		case <-thirtySec:
-			game.Room.presentBoost()
+			// game.Room.presentBoost()
 
 		}
 		PressHandler(win, &game)
@@ -63,27 +63,11 @@ func run(win *pixelgl.Window, devMode, noSpawns bool) pixel.Vec {
 
 		game.Player.Cam.Attract(game.Player.Posn)
 		game.Player.Cam.Matrix = pixel.IM.Moved(win.Bounds().Center().Sub(game.Player.Cam.Posn))
-
 		win.SetMatrix(game.Player.Cam.Matrix)
 
-		game.Room.Target.Clear(pixel.Alpha(0))
-		game.Player.playerTorch(game.Level, game.Count, game.Spacing, &game.Room)
-		game.Room.Disp()
-
 		game.updateMonsters()
-
 		game.updateShots()
-		game.DispShots(game.Room.Target)
-		game.Room.Target.Draw(win, pixel.IM) //.Moved(win.Bounds().Center()))
-
-		if devMode {
-			fpsDisp(frames/seconds, game.Player.Posn, win)
-		}
-
-		game.Player.Disp(win)
-		illuminate(game.Room, game.Player, point)
-		point.Draw(win)
-
+		game.Disp(win)
 		win.Update()
 		// time.Sleep(1 / 2 * time.Second)
 	}

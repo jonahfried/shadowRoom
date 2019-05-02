@@ -6,7 +6,6 @@ import (
 	"github.com/faiface/pixel"
 	"github.com/faiface/pixel/imdraw"
 	"github.com/faiface/pixel/pixelgl"
-	"golang.org/x/image/colornames"
 )
 
 // Place is datastructure that holds a rectangle for its bounds
@@ -17,7 +16,6 @@ type Place struct {
 	Blocks             []Obstacle
 	Vertices           []pixel.Vec
 	GridRepresentation Grid
-	Booster            Boost
 
 	Img    *imdraw.IMDraw
 	Target *pixelgl.Canvas
@@ -52,10 +50,10 @@ func MakePlace(rect pixel.Rect, numBlocks int, blocks ...Obstacle) (room Place) 
 		room.Blocks = blocks
 	}
 
-	room.Booster.Present = false
-	room.Booster.Posn = pixel.V(100, 100)
-	room.Booster.Img = imdraw.New(nil)
-	room.Booster.Img.Color = colornames.Royalblue
+	// room.Booster.Present = false
+	// room.Booster.Posn = pixel.V(100, 100)
+	// room.Booster.Img = imdraw.New(nil)
+	// room.Booster.Img.Color = colornames.Royalblue
 	// room.Booster.Img.Precision = 32
 
 	room.Target = pixelgl.NewCanvas(rect)

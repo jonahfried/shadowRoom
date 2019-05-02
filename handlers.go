@@ -24,7 +24,7 @@ func (game *Game) fire(win *pixelgl.Window) {
 		// bullet.Vel.Add(game.Player.Vel)
 		bullet.Vel = directionVec.Scaled(14)
 		game.Shots = append(game.Shots, bullet)
-	case 2:
+	case SHOTGUN:
 		angle := math.Atan2(mousePosn.Y-game.Player.Posn.Y, mousePosn.X-game.Player.Posn.X)
 		for shotCount := 0; shotCount < 5; shotCount++ {
 			var bullet Shot
@@ -41,8 +41,8 @@ func (game *Game) fire(win *pixelgl.Window) {
 			bullet.Vel = (bullet.Posn2.Sub(bullet.Posn1)).Scaled(2 + (rand.Float64()-rand.Float64())/2.3)
 			game.Shots = append(game.Shots, bullet)
 		}
-		game.Player.Bullets--
-		if game.Player.Bullets <= 0 {
+		game.Player.Bullets[SHOTGUN]--
+		if game.Player.Bullets[SHOTGUN] <= 0 {
 			game.Player.GunType = 1
 		}
 	}

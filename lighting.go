@@ -6,15 +6,17 @@ import (
 
 	"github.com/faiface/pixel"
 	"github.com/faiface/pixel/imdraw"
+	"github.com/faiface/pixel/pixelgl"
 	"golang.org/x/image/colornames"
 )
 
-func illuminate(room Place, cir Agent, point *imdraw.IMDraw) {
-	point.Clear()
+func illuminate(room Place, cir Agent, win *pixelgl.Window) {
+	point := imdraw.New(nil)
+	point.Color = colornames.Black
+
 	var anglesToCheck []float64
 	var shadedRoomCorners []pixel.Vec
 	var obstructedPoints []pixel.Vec
-
 	for _, block := range room.Blocks {
 		getAnglesToCheck(&anglesToCheck, block, cir.Posn)
 		getShadedRoomCorners(&shadedRoomCorners, room, block, cir.Posn)
@@ -25,6 +27,8 @@ func illuminate(room Place, cir Agent, point *imdraw.IMDraw) {
 		shadeBetweenCorners(shadedRoomCorners, obstructedPoints[0], point, cir) // len(obstructedPoints) >= 1
 
 	}
+
+	point.Draw(win)
 }
 
 func getObstructedPoints(obstructedPoints *[]pixel.Vec, anglesToCheck []float64, room Place, block Obstacle, posn pixel.Vec) {

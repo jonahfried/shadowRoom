@@ -13,6 +13,7 @@ type Game struct {
 
 	Monsters []Creature
 	Shots    []Shot
+	PowerUps []PowerUp
 
 	DevMode bool
 	Level   float64
@@ -34,8 +35,9 @@ func makeGame(win *pixelgl.Window, devMode bool) (g Game) {
 	g.Player = p
 	g.Room = room
 
-	g.Shots = make([]Shot, 0)
 	g.Monsters = make([]Creature, 0)
+	g.Shots = make([]Shot, 0)
+	g.PowerUps = make([]PowerUp, 0)
 
 	g.DevMode = devMode
 	g.Level = .02
