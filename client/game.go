@@ -4,6 +4,7 @@ import (
 	"github.com/faiface/pixel"
 	"github.com/faiface/pixel/pixelgl"
 	"golang.org/x/image/colornames"
+	"golang.org/x/net/websocket"
 )
 
 // A Game represents the current game in progress.
@@ -24,14 +25,12 @@ func (g Game) getRoom() Place {
 	return g.Room
 }
 
-func makeGame(win *pixelgl.Window, devMode bool) (g Game) {
+func makeGame(win *pixelgl.Window, devMode bool, ws *websocket.Conn) (g Game) {
 	var p = MakeAgent(0, 0, win) // player
 
 	// TODO: Make room bounds relative to Bounds
-	room := MakePlace(pixel.R(-700, -600, 700, 600), 11)
-	room.Target.SetMatrix(pixel.IM.Moved(room.Target.Bounds().Center())) //Move this out of loop?
 	g.Player = p
-	g.Room = room
+	g.Room = getInitRoomFromServer(ws)
 
 	g.Shots = make([]Shot, 0)
 	g.Monsters = make([]Creature, 0)
@@ -42,6 +41,18 @@ func makeGame(win *pixelgl.Window, devMode bool) (g Game) {
 	g.Count = 88
 
 	return g
+}
+
+func getInitRoomFromServer(ws *websocket.Conn) Place {
+	websocket.JSON.Send(ws, "initState")
+	var room Place
+	websocket.JSON.Receive(ws, &room)
+	blocks := make([]Obstacle, len(room.Blocks))
+	for ind, block := range room.Blocks {
+		blocks[ind] = MakeObstacle(block.Vertices, block.Center, block.Radius)
+	}
+	newRoom := MakePlace(room.Rect, len(blocks)-1, blocks...)
+	return newRoom
 }
 
 func removeDead(monsters *[]Creature) {

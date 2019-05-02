@@ -25,7 +25,7 @@ type Server struct {
 // Sends worldstate through websock conn to the client
 func (serv *Server) broadcast() {
 	// fmt.Println("Broadcasting the WorldState", serv.World.Room)
-	err := websocket.JSON.Send(serv.p1.ws, serv.World)
+	err := websocket.JSON.Send(serv.p1.ws, serv.World.Player)
 	if err != nil {
 		log.Fatal("Error while broadcasting the WS:", err)
 	}
@@ -42,14 +42,20 @@ func (serv *Server) broadcastRoom() {
 // And updates the game
 func (serv *Server) listen() {
 	fmt.Println("LISTENING")
-	tick := time.Tick(100 * time.Millisecond)
+	tick := time.Tick(75 * time.Millisecond)
 	for {
 		select {
 		case msg := <-serv.p1.msg:
 			fmt.Println(msg)
-			serv.World.Player.moveHandler(msg)
-			serv.broadcast()
-			fmt.Println("Broadcasted")
+			switch msg {
+			case "initState":
+				serv.broadcastRoom()
+			default:
+				fmt.Println(msg)
+				serv.World.Player.moveHandler(msg)
+				serv.broadcast()
+				fmt.Println("Broadcasted")
+			}
 		case <-tick:
 			serv.World.Player.playerKinamatics(&serv.World.Room)
 

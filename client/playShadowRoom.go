@@ -1,7 +1,6 @@
 package main
 
 import (
-	"fmt"
 	"log"
 	"time"
 
@@ -11,12 +10,12 @@ import (
 	"golang.org/x/net/websocket"
 )
 
-func listen(receiver chan Game, ws *websocket.Conn) {
-	var g Game
-	err := websocket.JSON.Receive(ws, &g)
+func listen(receiver chan Agent, ws *websocket.Conn) {
+	var p Agent
+	err := websocket.JSON.Receive(ws, &p)
 	for err == nil {
-		receiver <- g
-		err = websocket.JSON.Receive(ws, &g)
+		receiver <- p
+		err = websocket.JSON.Receive(ws, &p)
 	}
 }
 
@@ -33,18 +32,17 @@ func initializeConn() *websocket.Conn {
 func run() {
 	win := getWindow()
 	ws := initializeConn()
-	game := makeGame(win, false)
+	game := makeGame(win, false, ws)
 
-	receiver := make(chan Game, 10)
+	receiver := make(chan Agent, 20)
 	go listen(receiver, ws)
-	tick := time.Tick(20 * time.Millisecond)
+	tick := time.Tick(75 * time.Millisecond)
 
 	for !win.Closed() {
 		select {
-		case newGameState := <-receiver:
-			game.Player.Posn = newGameState.Player.Posn
-			game.Player.Vel = newGameState.Player.Vel
-			fmt.Println(newGameState)
+		case newPlayer := <-receiver:
+			game.Player.Posn = newPlayer.Posn
+			game.Player.Vel = newPlayer.Vel
 		case <-tick:
 		}
 		PressHandler(win, ws)
