@@ -22,6 +22,7 @@ func illuminate(room Place, cir Agent, point *imdraw.IMDraw) {
 
 		shadePointsByViewMode(obstructedPoints, point, cir)
 		shadeObstructedPointsToCorners(obstructedPoints, shadedRoomCorners, point, cir)
+		shadeBetweenCorners(shadedRoomCorners, obstructedPoints[0], point, cir) // len(obstructedPoints) >= 1
 
 	}
 }

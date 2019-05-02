@@ -1,6 +1,8 @@
 package main
 
 import (
+	"math/rand"
+
 	"github.com/faiface/pixel"
 	"github.com/faiface/pixel/imdraw"
 	"github.com/faiface/pixel/pixelgl"
@@ -61,7 +63,26 @@ func MakePlace(rect pixel.Rect, numBlocks int, blocks ...Obstacle) (room Place) 
 	return room
 }
 
-// safeSpawnInRoom returns a pixel.Vec at least `radius` dist from obstacles
+// Returns a random point within radius dist of the room's walls
+func (room Place) randomPlaceInRoom(radius float64) pixel.Vec {
+	x := rand.Float64()*(room.Rect.W()-2*radius) + room.Rect.Min.X + radius
+	y := rand.Float64()*(room.Rect.H()-2*radius) + room.Rect.Min.Y + radius
+	return pixel.V(x, y)
+}
+
+// safeSpawnInRoom returns a pixel.Vec at least `radius` dist from obstacles.
+// If cannot find one within 20 attempts, gives up and just gives the next random location.
 func (room Place) safeSpawnInRoom(radius float64) pixel.Vec {
-	return pixel.ZV
+	attempt := room.randomPlaceInRoom(radius)
+TryLoop:
+	for i := 0; i < 20; i++ {
+		for _, block := range room.Blocks {
+			if vecDist(block.Center, attempt) < block.Radius+radius {
+				attempt = room.randomPlaceInRoom(radius)
+				continue TryLoop
+			}
+		}
+		break TryLoop
+	}
+	return attempt
 }

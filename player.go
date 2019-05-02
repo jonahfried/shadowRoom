@@ -82,7 +82,7 @@ func collision(blocks []Obstacle, posn pixel.Vec, radius float64) (force pixel.V
 // Returns the point on a line segment closest to a given position. (Either one of the two ends or a point between them)
 func closestPointOnSegment(end1, end2, posn pixel.Vec) (cloestest pixel.Vec) {
 	segVec := end2.Sub(end1)
-	unitSegVec := segVec.Scaled(1 / magnitude(segVec))
+	unitSegVec := segVec.Scaled(1 / segVec.Len())
 	posnOffset := posn.Sub(end1)
 	projMag := posnOffset.Dot(unitSegVec)
 	projVec := unitSegVec.Scaled(projMag)
@@ -90,7 +90,7 @@ func closestPointOnSegment(end1, end2, posn pixel.Vec) (cloestest pixel.Vec) {
 
 	if projMag < 0 {
 		closest = end1
-	} else if projMag > magnitude(segVec) {
+	} else if projMag > segVec.Len() {
 		closest = end2
 	} else {
 		closest = end1.Add(projVec)

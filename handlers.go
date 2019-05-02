@@ -12,7 +12,7 @@ import (
 func (game *Game) fire(win *pixelgl.Window) {
 	mousePosn := game.Player.Cam.Matrix.Unproject(win.MousePosition())
 	directionVec := mousePosn.Sub(game.Player.Posn)
-	directionVec = directionVec.Scaled(1 / magnitude(directionVec))
+	directionVec = directionVec.Scaled(1 / directionVec.Len())
 
 	switch game.Player.GunType {
 	case 1:

@@ -78,7 +78,7 @@ BulletLoop:
 			continue BulletLoop
 		}
 
-		if magnitude(g.Shots[bulletInd].Vel) < 2 {
+		if g.Shots[bulletInd].Vel.Len() < 2 {
 			g.Shots[bulletInd] = g.Shots[len(g.Shots)-1]
 			g.Shots = g.Shots[:len(g.Shots)-1]
 			bulletInd--

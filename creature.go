@@ -53,20 +53,6 @@ TryLoop:
 	return monster
 }
 
-// Vector limitation. Takes in a pixel.Vec and a float64.
-// If the magnitude of the given vector is greater than the limit,
-// Then the magnitude is scaled down to the limit.
-func limitVecMag(v pixel.Vec, lim float64) pixel.Vec {
-	if v.Len() != 0 && v.Len() > lim {
-		v = v.Scaled(lim / v.Len())
-	}
-	return v
-}
-
-func magnitude(vec pixel.Vec) float64 {
-	return vecDist(pixel.ZV, vec)
-}
-
 // Update is a method for a creature, taking in a room
 // returning nothing, it alters the position and velocity of the creature
 func (monster *Creature) Update(room Place, cir *Agent, target pixel.Vec, monsters []Creature) {
@@ -86,7 +72,7 @@ func (monster *Creature) Update(room Place, cir *Agent, target pixel.Vec, monste
 			end1 := obst.Vertices[vertexInd]
 			end2 := obst.Vertices[vertexInd-1]
 			segVec := end2.Sub(end1)
-			unitSegVec := segVec.Scaled(1 / magnitude(segVec))
+			unitSegVec := segVec.Scaled(1 / segVec.Len())
 			centerOffset := center.Sub(end1)
 			projMag := centerOffset.Dot(unitSegVec)
 			projVec := unitSegVec.Scaled(projMag)
@@ -94,7 +80,7 @@ func (monster *Creature) Update(room Place, cir *Agent, target pixel.Vec, monste
 
 			if projMag < 0 {
 				closest = end1
-			} else if projMag > magnitude(segVec) {
+			} else if projMag > segVec.Len() {
 				closest = end2
 			} else {
 				closest = end1.Add(projVec)
@@ -102,8 +88,8 @@ func (monster *Creature) Update(room Place, cir *Agent, target pixel.Vec, monste
 
 			dist := center.Sub(closest)
 
-			if magnitude(dist) < (radius + 4) {
-				offset := (dist.Scaled(1 / magnitude(dist))).Scaled((radius + 4) - magnitude(dist))
+			if dist.Len() < (radius + 4) {
+				offset := (dist.Scaled(1 / dist.Len())).Scaled((radius + 4) - dist.Len())
 				offset = offset.Scaled(.30)
 				monster.Vel = (monster.Vel.Add(offset)).Scaled(.88)
 			}
@@ -112,7 +98,7 @@ func (monster *Creature) Update(room Place, cir *Agent, target pixel.Vec, monste
 		end1 := obst.Vertices[0]
 		end2 := obst.Vertices[len(obst.Vertices)-1]
 		segVec := end2.Sub(end1)
-		unitSegVec := segVec.Scaled(1 / magnitude(segVec))
+		unitSegVec := segVec.Scaled(1 / segVec.Len())
 		centerOffset := center.Sub(end1)
 		projMag := centerOffset.Dot(unitSegVec)
 		projVec := unitSegVec.Scaled(projMag)
@@ -120,7 +106,7 @@ func (monster *Creature) Update(room Place, cir *Agent, target pixel.Vec, monste
 
 		if projMag < 0 {
 			closest = end1
-		} else if projMag > magnitude(segVec) {
+		} else if projMag > segVec.Len() {
 			closest = end2
 		} else {
 			closest = end1.Add(projVec)
@@ -128,8 +114,8 @@ func (monster *Creature) Update(room Place, cir *Agent, target pixel.Vec, monste
 
 		dist := center.Sub(closest)
 
-		if magnitude(dist) < (radius + 4) {
-			offset := (dist.Scaled(1 / magnitude(dist))).Scaled((radius + 4) - magnitude(dist))
+		if dist.Len() < (radius + 4) {
+			offset := (dist.Scaled(1 / dist.Len())).Scaled((radius + 4) - dist.Len())
 			offset = offset.Scaled(.30)
 			monster.Vel = (monster.Vel.Add(offset)).Scaled(.88)
 		}
@@ -137,10 +123,10 @@ func (monster *Creature) Update(room Place, cir *Agent, target pixel.Vec, monste
 	}
 
 	playerDist := cir.Posn.Sub(monster.Posn)
-	if magnitude(playerDist) < 40 && magnitude(playerDist) > 0 {
-		changeBy := (40 - magnitude(playerDist)) / 2
-		monster.Vel = monster.Vel.Sub(playerDist.Scaled(2 * changeBy / magnitude(playerDist)))
-		cir.Vel = cir.Vel.Add(playerDist.Scaled(changeBy / magnitude(playerDist)))
+	if playerDist.Len() < 40 && playerDist.Len() > 0 {
+		changeBy := (40 - playerDist.Len()) / 2
+		monster.Vel = monster.Vel.Sub(playerDist.Scaled(2 * changeBy / playerDist.Len()))
+		cir.Vel = cir.Vel.Add(playerDist.Scaled(changeBy / playerDist.Len()))
 		cir.Img.Color = colornames.Red
 		cir.Health--
 		// monsters[blobInd].Posn = monsters[blobInd].Posn.Sub(dist)
@@ -148,10 +134,10 @@ func (monster *Creature) Update(room Place, cir *Agent, target pixel.Vec, monste
 
 	for blobInd := range monsters {
 		dist := monsters[blobInd].Posn.Sub(monster.Posn)
-		if magnitude(dist) < 40 && magnitude(dist) > 0 {
-			changeBy := (40 - magnitude(dist)) / 2
-			monster.Vel = monster.Vel.Sub(dist.Scaled(changeBy / magnitude(dist)))
-			monsters[blobInd].Vel = monsters[blobInd].Vel.Add(dist.Scaled(changeBy / magnitude(dist)))
+		if dist.Len() < 40 && dist.Len() > 0 {
+			changeBy := (40 - dist.Len()) / 2
+			monster.Vel = monster.Vel.Sub(dist.Scaled(changeBy / dist.Len()))
+			monsters[blobInd].Vel = monsters[blobInd].Vel.Add(dist.Scaled(changeBy / dist.Len()))
 			// monsters[blobInd].Posn = monsters[blobInd].Posn.Sub(dist)
 		}
 	}
@@ -183,7 +169,7 @@ func (game *Game) updateMonsters() {
 
 // // Update updates a runner type monster
 // func (monster *runner) Update(target pixel.Vec, dt float64) {
-// 	if magnitude(monster.Vel) < .1 {
+// 	if monster.Len()Vel) < .1 {
 // 		monster.Vel = pixel.ZV
 // 	}
 // 	if monster.TrackTime < 10 {
