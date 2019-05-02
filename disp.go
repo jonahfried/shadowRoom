@@ -64,6 +64,7 @@ func (monster *Creature) Disp(win *pixelgl.Canvas) {
 
 // Disp draws all necesary pieces of the Game
 func (game *Game) Disp(win *pixelgl.Window) {
+	win.Clear(colornames.Black)
 	game.Room.Target.Clear(pixel.Alpha(0))
 	game.Player.playerTorch(game.Level, game.Count, game.Spacing, &game.Room)
 	game.Room.Disp()
@@ -78,5 +79,4 @@ func (game *Game) Disp(win *pixelgl.Window) {
 	// if game.DevMode {
 	// 	fpsDisp(frames/seconds, game.Player.Posn, win)
 	// }
-
 }

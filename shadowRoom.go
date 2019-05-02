@@ -18,7 +18,7 @@ import (
 )
 
 // Acting main function
-func run(win *pixelgl.Window, devMode, noSpawns bool) pixel.Vec {
+func run(win *pixelgl.Window, devMode, noSpawn bool) pixel.Vec {
 	game := makeGame(win, devMode)
 
 	point := imdraw.New(nil)
@@ -33,6 +33,16 @@ func run(win *pixelgl.Window, devMode, noSpawns bool) pixel.Vec {
 	seconds := 0.0
 	// Main Draw Loop:
 	for !win.Closed() && game.Player.Health > 0 {
+		if !win.Focused() {
+			game.Paused = true
+		}
+		if game.Paused {
+			if win.JustPressed(pixelgl.KeyP) {
+				game.Paused = false
+			}
+			win.Update()
+			continue
+		}
 		dt := time.Since(last).Seconds()
 		last = time.Now()
 		seconds += dt
@@ -46,18 +56,15 @@ func run(win *pixelgl.Window, devMode, noSpawns bool) pixel.Vec {
 		case <-frameRate:
 
 		case <-fiveSec:
-			if !noSpawns {
+			if !noSpawn {
 				game.Monsters = append(game.Monsters, MakeCreature(&game.Room, &game.Player))
 			}
 		case <-thirtySec:
-			// game.Room.presentBoost()
-
+			game.PowerUps = append(game.PowerUps, MakeShotgun(game.Room.safeSpawnInRoom(10)))
 		}
+
 		PressHandler(win, &game)
 		ReleaseHandler(win, &game)
-
-		win.Clear(colornames.Black)
-		game.Room.Disp()
 
 		game.Player.playerKinamatics(&game.Room)
 
@@ -67,9 +74,10 @@ func run(win *pixelgl.Window, devMode, noSpawns bool) pixel.Vec {
 
 		game.updateMonsters()
 		game.updateShots()
+		game.updatePowerUps()
+
 		game.Disp(win)
 		win.Update()
-		// time.Sleep(1 / 2 * time.Second)
 	}
 	return game.Player.Posn
 }
@@ -84,11 +92,11 @@ func fpsDisp(fps float64, posn pixel.Vec, win *pixelgl.Window) {
 
 func starter() {
 	devMode := flag.Bool("dev", false, "runs with access to dev buttons")
-	noSpawns := flag.Bool("noSpawns", false, "stop the spawning of enemies")
+	noSpawn := flag.Bool("noSpawn", false, "stop the spawning of enemies")
 	flag.Parse()
 
 	win := getWindow()
-	finalPosn := run(win, *devMode, *noSpawns)
+	finalPosn := run(win, *devMode, *noSpawn)
 
 	for !win.Closed() {
 		win.Clear(colornames.Whitesmoke)
@@ -98,7 +106,7 @@ func starter() {
 		fmt.Fprint(endTxt, "Game Over!\n(space to restart)")
 		endTxt.Draw(win, pixel.IM)
 		if win.JustPressed(pixelgl.KeySpace) {
-			finalPosn = run(win, *devMode, *noSpawns)
+			finalPosn = run(win, *devMode, *noSpawn)
 		}
 		win.Update()
 	}
@@ -108,7 +116,7 @@ func starter() {
 func getWindow() *pixelgl.Window {
 	var win *pixelgl.Window
 	cfg := pixelgl.WindowConfig{
-		Title:     "shadowRoom",
+		Title:     "Shadow Room!",
 		Bounds:    pixel.R(0, 0, 1350, 725),
 		VSync:     true,
 		Resizable: true,
@@ -118,6 +126,7 @@ func getWindow() *pixelgl.Window {
 	if err != nil {
 		panic(err)
 	}
+	// win.SetCursorVisible(false)
 	return win
 }
 

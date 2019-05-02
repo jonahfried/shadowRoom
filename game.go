@@ -19,6 +19,7 @@ type Game struct {
 	Level   float64
 	Spacing int
 	Count   int
+	Paused  bool
 }
 
 func (g Game) getRoom() Place {
@@ -43,8 +44,18 @@ func makeGame(win *pixelgl.Window, devMode bool) (g Game) {
 	g.Level = .02
 	g.Spacing = 6
 	g.Count = 88
+	g.Paused = false
 
 	return g
+}
+
+func (g *Game) updatePowerUps() {
+	for i := len(g.PowerUps) - 1; i >= 0; i-- {
+		if g.PowerUps[i].shouldApply(&g.Player) {
+			g.PowerUps[i].apply(&g.Player)
+			removeAtInd(&g.PowerUps, i)
+		}
+	}
 }
 
 func removeDead(monsters *[]Creature) {
@@ -92,7 +103,7 @@ BulletLoop:
 	removeDead(&g.Monsters)
 }
 
-func removeAtInd(lst *[]interface{}, ind int) {
+func removeAtInd(lst *[]PowerUp, ind int) {
 	if ind > len(*lst) {
 		return
 	}

@@ -3,6 +3,8 @@ package main
 import (
 	"image/color"
 
+	"golang.org/x/image/colornames"
+
 	"github.com/faiface/pixel"
 	"github.com/faiface/pixel/imdraw"
 )
@@ -43,6 +45,14 @@ type Shotgun struct {
 	Posn   pixel.Vec
 	Color  color.RGBA
 	Radius float64
+}
+
+// MakeShotgun returns a Shotgun
+func MakeShotgun(posn pixel.Vec) (shot Shotgun) {
+	shot.Posn = posn
+	shot.Color = colornames.Blue
+	shot.Radius = 10
+	return shot
 }
 
 // SHOTGUN is the number associated with the shotgun

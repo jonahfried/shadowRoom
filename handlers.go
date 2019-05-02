@@ -21,8 +21,8 @@ func (game *Game) fire(win *pixelgl.Window) {
 		bullet.color = pixel.ToRGBA(colornames.Firebrick).Mul(pixel.Alpha(.7))
 		bullet.Posn1 = game.Player.Posn
 		bullet.Posn2 = game.Player.Posn.Add(directionVec.Scaled(10))
-		// bullet.Vel.Add(game.Player.Vel)
 		bullet.Vel = directionVec.Scaled(14)
+		bullet.Vel.Add(game.Player.Vel)
 		game.Shots = append(game.Shots, bullet)
 	case SHOTGUN:
 		angle := math.Atan2(mousePosn.Y-game.Player.Posn.Y, mousePosn.X-game.Player.Posn.X)
@@ -64,7 +64,12 @@ func PressHandler(win *pixelgl.Window, game *Game) {
 	if win.Pressed(pixelgl.KeyW) {
 		game.Player.Acc = game.Player.Acc.Add(pixel.V(0, 5))
 	}
-
+	if win.Pressed(pixelgl.Key2) {
+		game.Player.GunType = SHOTGUN
+	}
+	if win.Pressed(pixelgl.Key1) {
+		game.Player.GunType = 1
+	}
 	// if game.Player.devMode {
 	// 	if win.JustPressed(pixelgl.KeyJ) {
 	// 		game.Player.Posn.X--
@@ -85,7 +90,9 @@ func PressHandler(win *pixelgl.Window, game *Game) {
 	// 		game.Player.Fill = !game.Player.Fill
 	// 	}
 	// }
-
+	if win.JustPressed(pixelgl.KeyP) {
+		game.Paused = true
+	}
 	if win.JustPressed(pixelgl.MouseButton1) {
 		game.fire(win)
 	}
