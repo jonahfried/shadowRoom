@@ -64,16 +64,13 @@ func (bullet *Shot) update() {
 // Checks to see if a given position should receive a collision force from a list of obstacles
 func collision(blocks []Obstacle, posn pixel.Vec, radius float64) (force pixel.Vec) {
 	for _, obst := range blocks {
-		vertices := make([]pixel.Vec, 0, 10)
-		vertices = append(vertices, obst.Vertices...)
-		vertices = append(vertices, obst.Vertices[0]) // adding the first element to the end to complete the shape
-		for vertexInd := 1; vertexInd < len(vertices); vertexInd++ {
-			closest := closestPointOnSegment(vertices[vertexInd], vertices[vertexInd-1], posn)
+		obst.Vertices = append(obst.Vertices, obst.Vertices[0]) // adding the first element to the end to complete the shape
+		for vertexInd := 1; vertexInd < len(obst.Vertices); vertexInd++ {
+			closest := closestPointOnSegment(obst.Vertices[vertexInd], obst.Vertices[vertexInd-1], posn)
 			dist := posn.Sub(closest)
 			if dist.Len() < (radius + 4) {
-				offset := (dist.Scaled(1 / dist.Len())).Scaled((radius + 4) - dist.Len())
-				offset = offset.Scaled(.30)
-				force = force.Add((offset).Scaled(.88))
+				offset := dist //(dist.Scaled(1 / dist.Len())).Scaled((radius + 4) - dist.Len())
+				force = force.Add((offset))
 			}
 		}
 
@@ -102,9 +99,11 @@ func closestPointOnSegment(end1, end2, posn pixel.Vec) (cloestest pixel.Vec) {
 
 // playerKinamatics runs necessary per-frame movements on agent.
 func (cir *Agent) playerKinamatics(room *Place) {
+	acc := limitVecMag(cir.Acc, 5)
+	cir.Vel = cir.Vel.Add(acc)
 	offset := collision(room.Blocks, cir.Posn, 20)
 	cir.Vel = cir.Vel.Add(offset)
-	cir.Vel = limitVecMag(cir.Vel.Add(limitVecMag(cir.Acc, 1.5)), 10).Scaled(.88)
+	cir.Vel = limitVecMag(cir.Vel.Scaled(.88), 10)
 	cir.Posn = cir.Posn.Add(cir.Vel)
 
 	cir.Posn.X = math.Max(cir.Posn.X-20, room.Rect.Min.X) + 20
@@ -112,10 +111,4 @@ func (cir *Agent) playerKinamatics(room *Place) {
 
 	cir.Posn.Y = math.Max(cir.Posn.Y-20, room.Rect.Min.Y) + 20
 	cir.Posn.Y = math.Min(cir.Posn.Y+20, room.Rect.Max.Y) - 20
-
-	// if vecDist(room.Booster.Posn, cir.Posn) < 30 && room.Booster.Present {
-	// 	room.Booster.Present = false
-	// 	cir.Bullets += 10
-	// 	cir.GunType = 2
-	// }
 }
