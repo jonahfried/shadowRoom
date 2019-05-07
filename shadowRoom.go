@@ -26,6 +26,7 @@ func run(win *pixelgl.Window, devMode, noSpawn bool) pixel.Vec {
 
 	frameRate := time.Tick(time.Millisecond * 17)
 	fiveSec := time.Tick(time.Second * 5)
+	oneSec := time.Tick(time.Second)
 	thirtySec := time.Tick(time.Second * 30)
 
 	last := time.Now()
@@ -54,13 +55,14 @@ func run(win *pixelgl.Window, devMode, noSpawn bool) pixel.Vec {
 
 		select {
 		case <-frameRate:
-
+		case <-oneSec:
+			// game.Level *= .9
 		case <-fiveSec:
 			if !noSpawn {
 				game.Monsters = append(game.Monsters, MakeCreature(&game.Room, &game.Player))
 			}
 		case <-thirtySec:
-			game.PowerUps = append(game.PowerUps, MakeShotgun(game.Room.safeSpawnInRoom(10)))
+			game.PowerUps = append(game.PowerUps, MakeTorch(game.Room.safeSpawnInRoom(10)))
 		}
 
 		PressHandler(win, &game)
@@ -72,9 +74,7 @@ func run(win *pixelgl.Window, devMode, noSpawn bool) pixel.Vec {
 		game.Player.Cam.Matrix = pixel.IM.Moved(win.Bounds().Center().Sub(game.Player.Cam.Posn))
 		win.SetMatrix(game.Player.Cam.Matrix)
 
-		game.updateMonsters()
-		game.updateShots()
-		game.updatePowerUps()
+		game.update()
 
 		game.Disp(win)
 		win.Update()

@@ -17,7 +17,8 @@ type Agent struct {
 
 	Cam Camera
 
-	Health int
+	Health     int
+	TorchLevel float64
 
 	GunType int
 	Bullets map[int]int
@@ -35,6 +36,7 @@ func MakeAgent(x, y float64, win *pixelgl.Window) (cir Agent) {
 	cir.Cam = MakeCamera(cir.Posn, win)
 
 	cir.Health = 100
+	cir.TorchLevel = 6
 
 	cir.GunType = 1
 	cir.Bullets = make(map[int]int)
