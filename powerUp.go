@@ -81,8 +81,7 @@ func (t Torch) shouldApply(player *Agent) bool {
 }
 func (t Torch) apply(player *Agent) {
 	if player.TorchLevel <= 10 {
-		// player.TorchLevel += 3
-		player.Torches += 1
+		player.Torches++
 	}
 }
 func (t Torch) isOver(player *Agent)   {}

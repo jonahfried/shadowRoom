@@ -75,7 +75,7 @@ func PressHandler(win *pixelgl.Window, game *Game) {
 	}
 	if win.Pressed(pixelgl.KeyT) && game.Player.Torches > 0 {
 		game.Player.Torches--
-		game.Player.TorchLevel += 3
+		game.Player.TorchLevel = math.Min(game.Player.TorchLevel+3, 6)
 	}
 	// if game.Player.devMode {
 	// 	if win.JustPressed(pixelgl.KeyJ) {
