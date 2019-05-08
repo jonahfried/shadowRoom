@@ -10,7 +10,8 @@ import (
 )
 
 func (game *Game) fire(win *pixelgl.Window) {
-	mousePosn := game.Player.Cam.Matrix.Unproject(win.MousePosition())
+	mousePosn := pixel.IM.Moved(win.Bounds().Center().Sub(game.Player.Posn)).Unproject(win.MousePosition())
+	// mousePosn := game.Player.Cam.Matrix.Unproject(win.MousePosition())
 	directionVec := mousePosn.Sub(game.Player.Posn)
 	directionVec = directionVec.Scaled(1 / directionVec.Len())
 
@@ -21,7 +22,7 @@ func (game *Game) fire(win *pixelgl.Window) {
 		bullet.color = pixel.ToRGBA(colornames.Firebrick).Mul(pixel.Alpha(.7))
 		bullet.Posn1 = game.Player.Posn
 		bullet.Posn2 = game.Player.Posn.Add(directionVec.Scaled(10))
-		bullet.Vel = directionVec.Scaled(14)
+		bullet.Vel = directionVec.Scaled(18)
 		bullet.Vel.Add(game.Player.Vel)
 		game.Shots = append(game.Shots, bullet)
 	case SHOTGUN:
@@ -71,6 +72,10 @@ func PressHandler(win *pixelgl.Window, game *Game) {
 	}
 	if win.Pressed(pixelgl.Key1) {
 		game.Player.GunType = 1
+	}
+	if win.Pressed(pixelgl.KeyT) && game.Player.Torches > 0 {
+		game.Player.Torches--
+		game.Player.TorchLevel += 3
 	}
 	// if game.Player.devMode {
 	// 	if win.JustPressed(pixelgl.KeyJ) {

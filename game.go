@@ -54,7 +54,7 @@ func (g *Game) update() {
 	g.updateShots()
 	g.updatePowerUps()
 	if g.Player.TorchLevel > 2.5 {
-		g.Player.TorchLevel *= .9995
+		g.Player.TorchLevel *= 1 - 1e-4 //.9995
 	}
 }
 

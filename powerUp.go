@@ -80,7 +80,10 @@ func (t Torch) shouldApply(player *Agent) bool {
 	return vecDist(t.Posn, player.Posn) <= player.Radius+t.Radius
 }
 func (t Torch) apply(player *Agent) {
-	player.TorchLevel += 3
+	if player.TorchLevel <= 10 {
+		// player.TorchLevel += 3
+		player.Torches += 1
+	}
 }
 func (t Torch) isOver(player *Agent)   {}
 func (t Torch) tearDown(player *Agent) {}
