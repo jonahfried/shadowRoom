@@ -52,6 +52,12 @@ func (game *Game) fire(win *pixelgl.Window) {
 // PressHandler Handles key presses.
 // Agent method taking in a window from which to accept inputs.
 func PressHandler(win *pixelgl.Window, game *Game) {
+	movementPressHandler(win, game)
+	itemPressHandler(win, game)
+
+}
+
+func movementPressHandler(win *pixelgl.Window, game *Game) {
 	game.Player.Acc = pixel.ZV
 	if win.Pressed(pixelgl.KeyA) {
 		game.Player.Acc = game.Player.Acc.Sub(pixel.V(5, 0))
@@ -65,6 +71,9 @@ func PressHandler(win *pixelgl.Window, game *Game) {
 	if win.Pressed(pixelgl.KeyW) {
 		game.Player.Acc = game.Player.Acc.Add(pixel.V(0, 5))
 	}
+}
+
+func itemPressHandler(win *pixelgl.Window, game *Game) {
 	if win.Pressed(pixelgl.Key2) {
 		if game.Player.Bullets[SHOTGUN] > 0 {
 			game.Player.GunType = SHOTGUN
@@ -77,26 +86,6 @@ func PressHandler(win *pixelgl.Window, game *Game) {
 		game.Player.Torches--
 		game.Player.TorchLevel = math.Min(game.Player.TorchLevel+3, 6)
 	}
-	// if game.Player.devMode {
-	// 	if win.JustPressed(pixelgl.KeyJ) {
-	// 		game.Player.Posn.X--
-	// 	}
-	// 	if win.JustPressed(pixelgl.KeyL) {
-	// 		game.Player.Posn.X++
-	// 	}
-	// 	if win.JustPressed(pixelgl.KeyK) {
-	// 		game.Player.Posn.Y--
-	// 	}
-	// 	if win.JustPressed(pixelgl.KeyI) {
-	// 		game.Player.Posn.Y++
-	// 	}
-	// 	if win.JustPressed(pixelgl.KeySpace) {
-	// 		game.Player.Shade = !game.Player.Shade
-	// 	}
-	// 	if win.JustPressed(pixelgl.KeyF) {
-	// 		game.Player.Fill = !game.Player.Fill
-	// 	}
-	// }
 	if win.JustPressed(pixelgl.KeyP) {
 		game.Paused = true
 	}
