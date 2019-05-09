@@ -10,7 +10,8 @@ import (
 )
 
 func (game *Game) fire(win *pixelgl.Window) {
-	mousePosn := game.Player.Cam.Matrix.Unproject(win.MousePosition())
+	mousePosn := pixel.IM.Moved(win.Bounds().Center().Sub(game.Player.Posn)).Unproject(win.MousePosition())
+	// mousePosn := game.Player.Cam.Matrix.Unproject(win.MousePosition())
 	directionVec := mousePosn.Sub(game.Player.Posn)
 	directionVec = directionVec.Scaled(1 / directionVec.Len())
 
@@ -21,7 +22,7 @@ func (game *Game) fire(win *pixelgl.Window) {
 		bullet.color = pixel.ToRGBA(colornames.Firebrick).Mul(pixel.Alpha(.7))
 		bullet.Posn1 = game.Player.Posn
 		bullet.Posn2 = game.Player.Posn.Add(directionVec.Scaled(10))
-		bullet.Vel = directionVec.Scaled(14)
+		bullet.Vel = directionVec.Scaled(18)
 		bullet.Vel.Add(game.Player.Vel)
 		game.Shots = append(game.Shots, bullet)
 	case SHOTGUN:
@@ -51,6 +52,12 @@ func (game *Game) fire(win *pixelgl.Window) {
 // PressHandler Handles key presses.
 // Agent method taking in a window from which to accept inputs.
 func PressHandler(win *pixelgl.Window, game *Game) {
+	movementPressHandler(win, game)
+	itemPressHandler(win, game)
+
+}
+
+func movementPressHandler(win *pixelgl.Window, game *Game) {
 	game.Player.Acc = pixel.ZV
 	if win.Pressed(pixelgl.KeyA) {
 		game.Player.Acc = game.Player.Acc.Sub(pixel.V(5, 0))
@@ -64,6 +71,9 @@ func PressHandler(win *pixelgl.Window, game *Game) {
 	if win.Pressed(pixelgl.KeyW) {
 		game.Player.Acc = game.Player.Acc.Add(pixel.V(0, 5))
 	}
+}
+
+func itemPressHandler(win *pixelgl.Window, game *Game) {
 	if win.Pressed(pixelgl.Key2) {
 		if game.Player.Bullets[SHOTGUN] > 0 {
 			game.Player.GunType = SHOTGUN
@@ -72,26 +82,10 @@ func PressHandler(win *pixelgl.Window, game *Game) {
 	if win.Pressed(pixelgl.Key1) {
 		game.Player.GunType = 1
 	}
-	// if game.Player.devMode {
-	// 	if win.JustPressed(pixelgl.KeyJ) {
-	// 		game.Player.Posn.X--
-	// 	}
-	// 	if win.JustPressed(pixelgl.KeyL) {
-	// 		game.Player.Posn.X++
-	// 	}
-	// 	if win.JustPressed(pixelgl.KeyK) {
-	// 		game.Player.Posn.Y--
-	// 	}
-	// 	if win.JustPressed(pixelgl.KeyI) {
-	// 		game.Player.Posn.Y++
-	// 	}
-	// 	if win.JustPressed(pixelgl.KeySpace) {
-	// 		game.Player.Shade = !game.Player.Shade
-	// 	}
-	// 	if win.JustPressed(pixelgl.KeyF) {
-	// 		game.Player.Fill = !game.Player.Fill
-	// 	}
-	// }
+	if win.Pressed(pixelgl.KeyT) && game.Player.Torches > 0 {
+		game.Player.Torches--
+		game.Player.TorchLevel = math.Min(game.Player.TorchLevel+3, 6)
+	}
 	if win.JustPressed(pixelgl.KeyP) {
 		game.Paused = true
 	}

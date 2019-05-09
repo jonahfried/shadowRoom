@@ -17,7 +17,7 @@ type Game struct {
 
 	DevMode bool
 	Level   float64
-	Spacing int
+	Spacing float64
 	Count   int
 	Paused  bool
 }
@@ -47,6 +47,15 @@ func makeGame(win *pixelgl.Window, devMode bool) (g Game) {
 	g.Paused = false
 
 	return g
+}
+
+func (g *Game) update() {
+	g.updateMonsters()
+	g.updateShots()
+	g.updatePowerUps()
+	if g.Player.TorchLevel > 2.5 {
+		g.Player.TorchLevel *= 1 - 1e-4
+	}
 }
 
 func (g *Game) updatePowerUps() {

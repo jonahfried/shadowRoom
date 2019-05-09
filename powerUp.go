@@ -6,7 +6,6 @@ import (
 	"golang.org/x/image/colornames"
 
 	"github.com/faiface/pixel"
-	"github.com/faiface/pixel/imdraw"
 )
 
 // A PowerUp represents any type that gives some sort of bonus to the player
@@ -23,29 +22,15 @@ type PowerUp interface {
 	color() color.RGBA
 }
 
-// Boost to give bonus to the player
-type Boost struct {
-	Posn    pixel.Vec
-	Present bool
-
-	Img *imdraw.IMDraw
-}
-
-// func (room *Place) presentBoost() {
-// 	if !room.Booster.Present {
-// 		room.Booster.Posn = room.safeSpawnInRoom(5) //pixel.V(room.Rect.Center().X+(room.Rect.W()/2*(rand.Float64()-rand.Float64())/2), room.Rect.Center().Y+room.Rect.H()*(rand.Float64()-rand.Float64())/2)
-// 		room.Booster.Present = true
-// 	} else {
-// 		room.Booster.Present = false
-// 	}
-// }
-
 // Shotgun implements PowerUp and provides the player with 10 uses of the SHOTGUN weapon
 type Shotgun struct {
 	Posn   pixel.Vec
 	Color  color.RGBA
 	Radius float64
 }
+
+// ShotgunWeight is the weight for determining spawn prob
+const ShotgunWeight = 1
 
 // MakeShotgun returns a Shotgun
 func MakeShotgun(posn pixel.Vec) (shot Shotgun) {
@@ -71,4 +56,39 @@ func (shot Shotgun) color() color.RGBA {
 }
 func (shot Shotgun) position() pixel.Vec {
 	return shot.Posn
+}
+
+// Torch increases the player light source
+type Torch struct {
+	Posn   pixel.Vec
+	Color  color.RGBA
+	Radius float64
+}
+
+// TorchWeight is the weight for determining spawn prob
+const TorchWeight = 1
+
+// MakeTorch returns a Torch
+func MakeTorch(posn pixel.Vec) (t Torch) {
+	t.Posn = posn
+	t.Color = colornames.Red
+	t.Radius = 10
+	return t
+}
+
+func (t Torch) shouldApply(player *Agent) bool {
+	return vecDist(t.Posn, player.Posn) <= player.Radius+t.Radius
+}
+func (t Torch) apply(player *Agent) {
+	if player.TorchLevel <= 10 {
+		player.Torches++
+	}
+}
+func (t Torch) isOver(player *Agent)   {}
+func (t Torch) tearDown(player *Agent) {}
+func (t Torch) color() color.RGBA {
+	return t.Color
+}
+func (t Torch) position() pixel.Vec {
+	return t.Posn
 }

@@ -66,13 +66,13 @@ func (monster *Creature) Disp(win *pixelgl.Canvas) {
 func (game *Game) Disp(win *pixelgl.Window) {
 	win.Clear(colornames.Black)
 	game.Room.Target.Clear(pixel.Alpha(0))
-	game.Player.playerTorch(game.Level, game.Count, game.Spacing, &game.Room)
+	game.Player.playerTorch(&game.Room)
 	game.Room.Disp()
+	dispPowerUps(game.PowerUps, game.Room.Target)
 	for monsterInd := range game.Monsters {
 		game.Monsters[monsterInd].Disp(game.Room.Target)
 	}
 	game.DispShots(game.Room.Target)
-	dispPowerUps(game.PowerUps, game.Room.Target)
 	game.Room.Target.Draw(win, pixel.IM) //.Moved(win.Bounds().Center()))
 	game.Player.Disp(win)
 	illuminate(game.Room, game.Player, win)
