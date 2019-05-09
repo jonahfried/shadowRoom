@@ -93,7 +93,7 @@ BulletLoop:
 		}
 
 		// Does more checks than necesarry in the case that it does collide.
-		if !(g.Room.Rect.Contains(g.Shots[bulletInd].Posn2)) || (collision(g.Room.Blocks, g.Shots[bulletInd].Posn2, 1) != pixel.ZV) {
+		if !(g.Room.Rect.Contains(g.Shots[bulletInd].Posn2)) || (collision(g.Room.Blocks, g.Shots[bulletInd].Posn2, 1, &pixel.ZV) != pixel.ZV) {
 			g.Shots[bulletInd] = g.Shots[len(g.Shots)-1]
 			g.Shots = g.Shots[:len(g.Shots)-1]
 			bulletInd--
