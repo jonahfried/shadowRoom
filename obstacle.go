@@ -37,10 +37,13 @@ func MakeObstacle(vertices []pixel.Vec, center pixel.Vec, radius float64) (obst 
 	for _, vert := range obst.Vertices {
 		obst.Img.Push(vert)
 	}
-	obst.Img.Polygon(8)
+	obst.Img.Polygon(ObstacleBorderWidth)
 
 	return obst
 }
+
+// ObstacleBorderWidth is the amount of pixels thick the line is drawn between vertices.
+const ObstacleBorderWidth = 8
 
 // MakeRandomBlock takes in a standard radius,
 // a standard deviation from the radius, a number of vertices to create, (float64)

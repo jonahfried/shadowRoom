@@ -2,7 +2,6 @@ package main
 
 import (
 	"math"
-	"math/rand"
 
 	"github.com/faiface/pixel"
 	"github.com/faiface/pixel/imdraw"
@@ -15,6 +14,7 @@ import (
 // - visual representation (*imdraw.IMDraw)
 type Creature struct {
 	Posn, Vel pixel.Vec
+	Radius    float64
 	Health    int
 
 	Img *imdraw.IMDraw
@@ -22,31 +22,11 @@ type Creature struct {
 
 // MakeCreature takes a starting x and y (float64), and returns a *Creature
 func MakeCreature(room *Place, cir *Agent) (monster Creature) {
-	xPosn := room.Rect.Center().X + (rand.Float64()-rand.Float64())*room.Rect.W()/2
-	yPosn := room.Rect.Center().Y + (rand.Float64()-rand.Float64())*room.Rect.H()/2
-	posn := pixel.V(xPosn, yPosn)
-TryLoop:
-	for tries := 0; tries < 10; tries++ {
-		if vecDist(posn, cir.Posn) < 80 {
-			xPosn = room.Rect.Center().X + (rand.Float64()-rand.Float64())*room.Rect.W()/2
-			yPosn = room.Rect.Center().Y + (rand.Float64()-rand.Float64())*room.Rect.H()/2
-			posn = pixel.V(xPosn, yPosn)
-			continue TryLoop
-		}
-		for _, obst := range room.Blocks {
-			if vecDist(posn, obst.Center) < (obst.Radius + 20) {
-				xPosn = room.Rect.Center().X + (rand.Float64()-rand.Float64())*room.Rect.W()/2
-				yPosn = room.Rect.Center().Y + (rand.Float64()-rand.Float64())*room.Rect.H()/2
-				posn = pixel.V(xPosn, yPosn)
-				continue TryLoop
-			}
-			break TryLoop
-		}
-	}
-	monster.Posn = posn
-	monster.Vel = pixel.V(0, 0)
-
+	monster.Radius = 20
+	monster.Posn = room.safeSpawnInRoom(monster.Radius)
+	monster.Vel = pixel.ZV
 	monster.Health = 5
+
 	monster.Img = imdraw.New(nil)
 	monster.Img.Color = colornames.Darkolivegreen
 

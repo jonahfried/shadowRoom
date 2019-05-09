@@ -12,8 +12,9 @@ import (
 // Agent keeps a posn, vel, acc, and a *pixel.IMDraw.
 // Used to keep all information for the movable image together.
 type Agent struct {
-	Posn, Vel, Acc pixel.Vec
-	Radius         float64
+	Posn, Vel, Acc   pixel.Vec
+	maxAcc, maxSpeed float64
+	Radius           float64
 
 	Cam Camera
 
@@ -30,8 +31,9 @@ type Agent struct {
 // MakeAgent creates a new agent starting at a given (x, y) coordinate
 func MakeAgent(x, y float64, win *pixelgl.Window) (cir Agent) {
 	cir.Posn = pixel.V(x, y)
-	cir.Vel = pixel.ZV
-	cir.Acc = pixel.ZV
+	cir.Vel, cir.Acc = pixel.ZV, pixel.ZV
+	cir.maxAcc = 2
+	cir.maxSpeed = 8
 	cir.Radius = 20
 
 	cir.Cam = MakeCamera(cir.Posn, win)
@@ -66,23 +68,24 @@ func (bullet *Shot) update() {
 }
 
 // Checks to see if a given position should receive a collision force from a list of obstacles
-func collision(blocks []Obstacle, posn pixel.Vec, radius float64) (force pixel.Vec) {
+func collision(blocks []Obstacle, posn pixel.Vec, radius float64, vel *pixel.Vec) (force pixel.Vec) {
+	posn = posn.Add(*vel)
+	minDist := radius + ObstacleBorderWidth/2
 	for _, obst := range blocks {
-		vertices := make([]pixel.Vec, 0, 10)
-		vertices = append(vertices, obst.Vertices...)
-		vertices = append(vertices, obst.Vertices[0]) // adding the first element to the end to complete the shape
-		for vertexInd := 1; vertexInd < len(vertices); vertexInd++ {
-			closest := closestPointOnSegment(vertices[vertexInd], vertices[vertexInd-1], posn)
+		obst.Vertices = append(obst.Vertices, obst.Vertices[0]) // adding the first element to the end to complete the shape
+		for vertexInd := 1; vertexInd < len(obst.Vertices); vertexInd++ {
+			closest := closestPointOnSegment(obst.Vertices[vertexInd], obst.Vertices[vertexInd-1], posn)
 			dist := posn.Sub(closest)
-			if dist.Len() < (radius + 4) {
-				offset := (dist.Scaled(1 / dist.Len())).Scaled((radius + 4) - dist.Len())
-				offset = offset.Scaled(.30)
-				force = force.Add((offset).Scaled(.88))
+			if dist.Len() < (minDist) {
+				dir := dist.Unit()
+				*vel = vel.Sub(dir.Scaled(vel.Dot(dir)))
+				dir = dir.Scaled((minDist - dist.Len()))
+				force = force.Add(dir)
 			}
 		}
 
 	}
-	return force
+	return force.Scaled(.2)
 }
 
 // Returns the point on a line segment closest to a given position. (Either one of the two ends or a point between them)
@@ -104,22 +107,23 @@ func closestPointOnSegment(end1, end2, posn pixel.Vec) (cloestest pixel.Vec) {
 	return closest
 }
 
+const friction = .8
+
 // playerKinamatics runs necessary per-frame movements on agent.
 func (cir *Agent) playerKinamatics(room *Place) {
-	offset := collision(room.Blocks, cir.Posn, 20)
-	cir.Vel = cir.Vel.Add(offset)
-	cir.Vel = limitVecMag(cir.Vel.Add(limitVecMag(cir.Acc, 1.5)), 10).Scaled(.88)
+	cir.Acc = limitVecMag(cir.Acc, cir.maxAcc)
+	cir.Vel = cir.Vel.Add(cir.Acc)
+	cir.Vel = limitVecMag(cir.Vel, cir.maxSpeed)
+
+	offset := collision(room.Blocks, cir.Posn, cir.Radius, &cir.Vel)
+	cir.Vel = cir.Vel.Add(offset.Scaled(.2))
+
 	cir.Posn = cir.Posn.Add(cir.Vel)
+	cir.Vel = limitVecMag(cir.Vel.Scaled(friction), 10)
 
 	cir.Posn.X = math.Max(cir.Posn.X-20, room.Rect.Min.X) + 20
 	cir.Posn.X = math.Min(cir.Posn.X+20, room.Rect.Max.X) - 20
 
 	cir.Posn.Y = math.Max(cir.Posn.Y-20, room.Rect.Min.Y) + 20
 	cir.Posn.Y = math.Min(cir.Posn.Y+20, room.Rect.Max.Y) - 20
-
-	// if vecDist(room.Booster.Posn, cir.Posn) < 30 && room.Booster.Present {
-	// 	room.Booster.Present = false
-	// 	cir.Bullets += 10
-	// 	cir.GunType = 2
-	// }
 }

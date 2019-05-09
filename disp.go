@@ -57,7 +57,7 @@ func (game *Game) DispShots(canv *pixelgl.Canvas) {
 func (monster *Creature) Disp(win *pixelgl.Canvas) {
 	monster.Img.Clear()
 	monster.Img.Push(monster.Posn)
-	monster.Img.Circle(20, 0)
+	monster.Img.Circle(monster.Radius, 0)
 	monster.Img.Draw(win)
 	monster.Img.Color = colornames.Darkolivegreen
 }
