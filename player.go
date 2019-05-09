@@ -85,7 +85,7 @@ func collision(blocks []Obstacle, posn pixel.Vec, radius float64, vel *pixel.Vec
 		}
 
 	}
-	return force.Scaled(.2)
+	return force
 }
 
 // Returns the point on a line segment closest to a given position. (Either one of the two ends or a point between them)
