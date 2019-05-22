@@ -10,6 +10,7 @@ import (
 	"golang.org/x/image/colornames"
 )
 
+// illuminate creates the shadows around the obstacles and draws it onto the window
 func illuminate(room Place, cir Agent, win *pixelgl.Window) {
 	point := imdraw.New(nil)
 	point.Color = colornames.Black
@@ -31,6 +32,7 @@ func illuminate(room Place, cir Agent, win *pixelgl.Window) {
 	point.Draw(win)
 }
 
+// returns the furthest visable point when "looking" at an obstacle's vertices
 func getObstructedPoints(obstructedPoints *[]pixel.Vec, anglesToCheck []float64, room Place, block Obstacle, posn pixel.Vec) {
 	*obstructedPoints = make([]pixel.Vec, 0)
 	for _, angle := range anglesToCheck {
@@ -39,6 +41,7 @@ func getObstructedPoints(obstructedPoints *[]pixel.Vec, anglesToCheck []float64,
 	}
 }
 
+// returns the room corners that are covered in shadow
 func getShadedRoomCorners(shadedRoomCorners *[]pixel.Vec, room Place, block Obstacle, posn pixel.Vec) {
 	*shadedRoomCorners = make([]pixel.Vec, 0) // Can just set len to 0 (instead of allocating each time)?
 	for _, vertex := range room.Vertices {
@@ -50,6 +53,7 @@ func getShadedRoomCorners(shadedRoomCorners *[]pixel.Vec, room Place, block Obst
 	}
 }
 
+// Shades between corners covered in shadow
 func shadeBetweenCorners(shadedRoomCorners []pixel.Vec, obstructedPoint pixel.Vec, point *imdraw.IMDraw, cir Agent) {
 	if len(shadedRoomCorners) > 1 {
 		for vertexInd := 1; vertexInd < len(shadedRoomCorners); vertexInd++ {
@@ -59,6 +63,7 @@ func shadeBetweenCorners(shadedRoomCorners []pixel.Vec, obstructedPoint pixel.Ve
 	}
 }
 
+// returns a sorted list of all (obstructed points + a few in each direction for each) angles to check given
 func getAnglesToCheck(anglesToCheck *[]float64, block Obstacle, posn pixel.Vec) {
 	*anglesToCheck = make([]float64, 0, 10) // Can just set len to 0 (instead of allocating each time)?
 	for _, vertex := range block.Vertices {
@@ -74,6 +79,7 @@ func getAnglesToCheck(anglesToCheck *[]float64, block Obstacle, posn pixel.Vec) 
 	sort.Float64s(*anglesToCheck)
 }
 
+// Shades between shaded corners and points on the obstacle
 func shadeObstructedPointsToCorners(obstructedPoints, shadedRoomCorners []pixel.Vec, point *imdraw.IMDraw, cir Agent) {
 	for _, vertex := range shadedRoomCorners {
 		for vecInd := 1; vecInd < len(obstructedPoints); vecInd++ {
@@ -83,6 +89,7 @@ func shadeObstructedPointsToCorners(obstructedPoints, shadedRoomCorners []pixel.
 	}
 }
 
+// fills in the points and creates a polygon in the image (point)
 func shadePointsByViewMode(vecs []pixel.Vec, point *imdraw.IMDraw, cir Agent) {
 	for _, vec := range vecs {
 		point.Push(vec)

@@ -48,6 +48,7 @@ func (prior *PriorityQueue) Pop() interface{} {
 
 }
 
+// Changes an element's data
 func (prior *PriorityQueue) update(item *Elem, value int, priority float64) {
 	item.Value = value
 	item.Priority = priority

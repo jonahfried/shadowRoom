@@ -4,7 +4,6 @@ import (
 	"flag"
 	"fmt"
 	_ "image/png"
-	"math"
 	"math/rand"
 	"time"
 
@@ -25,9 +24,6 @@ func run(win *pixelgl.Window, devMode, noSpawn bool) pixel.Vec {
 	oneSec := time.Tick(time.Second)
 	thirtySec := time.Tick(time.Second * 30)
 
-	last := time.Now()
-	frames := 0.0
-	seconds := 0.0
 	// Main Draw Loop:
 	for !win.Closed() && game.Player.Health > 0 {
 		if !win.Focused() {
@@ -40,14 +36,6 @@ func run(win *pixelgl.Window, devMode, noSpawn bool) pixel.Vec {
 			win.Update()
 			continue
 		}
-		dt := time.Since(last).Seconds()
-		last = time.Now()
-		seconds += dt
-		if frames > 1000 {
-			frames = 0
-			seconds = 0
-		}
-		frames++
 
 		select {
 		case <-frameRate:
@@ -78,14 +66,7 @@ func run(win *pixelgl.Window, devMode, noSpawn bool) pixel.Vec {
 	return game.Player.Posn
 }
 
-func fpsDisp(fps float64, posn pixel.Vec, win *pixelgl.Window) {
-	basicAtlas := text.NewAtlas(basicfont.Face7x13, text.ASCII)
-	basicTxt := text.New(posn.Add(pixel.V(-20, 30)), basicAtlas)
-	basicTxt.Color = colornames.Red
-	fmt.Fprintln(basicTxt, "fps:", math.Round(fps))
-	basicTxt.Draw(win, pixel.IM)
-}
-
+// Used to start and loop the gameplay when killed
 func starter() {
 	devMode := flag.Bool("dev", false, "runs with access to dev buttons")
 	noSpawn := flag.Bool("noSpawn", false, "stop the spawning of enemies")
@@ -109,6 +90,7 @@ func starter() {
 
 }
 
+// Creates a window and returns a reference to it
 func getWindow() *pixelgl.Window {
 	var win *pixelgl.Window
 	cfg := pixelgl.WindowConfig{

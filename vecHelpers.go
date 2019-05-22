@@ -16,3 +16,21 @@ func limitVecMag(v pixel.Vec, lim float64) pixel.Vec {
 	}
 	return v
 }
+
+// Returns the point on a line segment closest to a given position. (Either one of the two ends or a point between them)
+func closestPointOnSegment(end1, end2, posn pixel.Vec) (closest pixel.Vec) {
+	segVec := end2.Sub(end1)
+	unitSegVec := segVec.Scaled(1 / segVec.Len())
+	posnOffset := posn.Sub(end1)
+	projMag := posnOffset.Dot(unitSegVec)
+	projVec := unitSegVec.Scaled(projMag)
+
+	if projMag < 0 {
+		closest = end1
+	} else if projMag > segVec.Len() {
+		closest = end2
+	} else {
+		closest = end1.Add(projVec)
+	}
+	return closest
+}
