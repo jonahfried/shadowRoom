@@ -22,6 +22,7 @@ func (room *Place) Disp() {
 
 }
 
+// dispPowerUps creates draws onto a canvas a circle of radius 10 for each powerUp
 func dispPowerUps(powerUps []PowerUp, canvas *pixelgl.Canvas) {
 	img := imdraw.New(nil)
 	for _, powerUp := range powerUps {

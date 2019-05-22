@@ -83,6 +83,8 @@ func (monster *Creature) creatureCollision(monsters *[]Creature) {
 	}
 }
 
+// update monsters finds the direction for a monster to go and then updates its movement
+// for each monster in the game
 func (game *Game) updateMonsters() {
 	for monsterInd := range game.Monsters {
 		monsterTarget := game.AStar(game.Monsters[monsterInd].Posn, game.Player.Posn)

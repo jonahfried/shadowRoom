@@ -103,6 +103,7 @@ func (room *Place) ToGrid(grain int) {
 	room.GridRepresentation = grid
 }
 
+// traceback finds the center of the next tile in the path to the target
 func traceBack(gridMap *[]Tile, traceInd int, goal pixel.Vec) pixel.Vec {
 	for (*gridMap)[traceInd].foundFrom != -1 {
 		next := (*gridMap)[traceInd].foundFrom
@@ -115,6 +116,8 @@ func traceBack(gridMap *[]Tile, traceInd int, goal pixel.Vec) pixel.Vec {
 
 }
 
+// tileDist returns the euclidean distance between the centers of two tiles
+// given the indices of the tiles in the gridmap
 func (grid *Grid) tileDist(ind1, ind2 int) float64 {
 	v1 := grid.GridMap[ind1].Rect.Center()
 	v2 := grid.GridMap[ind2].Rect.Center()

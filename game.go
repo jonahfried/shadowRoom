@@ -49,6 +49,7 @@ func makeGame(win *pixelgl.Window, devMode bool) (g Game) {
 	return g
 }
 
+// update game updates the game's monsters, shots, powerups, and torch level
 func (g *Game) update() {
 	g.updateMonsters()
 	g.updateShots()
@@ -58,6 +59,7 @@ func (g *Game) update() {
 	}
 }
 
+// updatePowerUps applies powerups that should be picked up and removes them from the powerUp list
 func (g *Game) updatePowerUps() {
 	for i := len(g.PowerUps) - 1; i >= 0; i-- {
 		if g.PowerUps[i].shouldApply(&g.Player) {
@@ -67,6 +69,7 @@ func (g *Game) updatePowerUps() {
 	}
 }
 
+// removeDead removes dead monsters from a list of monsters
 func removeDead(monsters *[]Creature) {
 	for monsterInd := 0; monsterInd < len(*monsters); monsterInd++ {
 		if (*monsters)[monsterInd].Health <= 0 {
@@ -76,6 +79,7 @@ func removeDead(monsters *[]Creature) {
 	}
 }
 
+// update shots moves the shots and then checks them for collisions with monsters or walls
 func (g *Game) updateShots() {
 BulletLoop:
 	for bulletInd := 0; bulletInd < len(g.Shots); bulletInd++ { //range g.Shots {
@@ -112,6 +116,7 @@ BulletLoop:
 	removeDead(&g.Monsters)
 }
 
+// removeAtInd removes a powerUp from a list of powerUps at a certain Ind
 func removeAtInd(lst *[]PowerUp, ind int) {
 	if ind > len(*lst) {
 		return

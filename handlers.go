@@ -57,6 +57,7 @@ func PressHandler(win *pixelgl.Window, game *Game) {
 
 }
 
+// Handles the Presses from the window related to movement
 func movementPressHandler(win *pixelgl.Window, game *Game) {
 	game.Player.Acc = pixel.ZV
 	if win.Pressed(pixelgl.KeyA) {
@@ -73,6 +74,7 @@ func movementPressHandler(win *pixelgl.Window, game *Game) {
 	}
 }
 
+// Handles the Presses from the window related to items and weapons
 func itemPressHandler(win *pixelgl.Window, game *Game) {
 	if win.Pressed(pixelgl.Key2) {
 		if game.Player.Bullets[SHOTGUN] > 0 {
